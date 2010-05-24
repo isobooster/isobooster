@@ -1,0 +1,14 @@
+.Trash*
+casper-rw*
+centos-*
+fedora-*
+data
+iso
+KNOPPIX
+opensuse-*
+rescue
+soas2
+win
+grub.exe
+ldlinux.sys
+

@@ -1,0 +1,110 @@
+# This is a sample menu.lst file. You should make some changes to it.
+# The old install method of booting via the stage-files has been removed.
+# Please install GRLDR boot strap code to MBR with the bootlace.com
+# utility under DOS/Win9x or Linux.
+
+#color blue/green yellow/red white/magenta white/magenta
+timeout 30
+default /default
+
+title Ubuntu 10.04 i386 with persistent
+find --set-root /iso/ubuntu-10.04-desktop-i386.iso
+map /iso/ubuntu-10.04-desktop-i386.iso (0xff)
+map --hook
+root (0xff)
+kernel /casper/vmlinuz file=/cdrom/preseed/ubuntu.seed boot=casper persistent iso-scan/filename=/iso/ubuntu-10.04-desktop-i386.iso splash
+initrd /casper/initrd.lz
+
+title Ubuntu 10.04 i386
+find --set-root /iso/ubuntu-10.04-desktop-i386.iso
+map /iso/ubuntu-10.04-desktop-i386.iso (0xff)
+map --hook
+root (0xff)
+kernel /casper/vmlinuz file=/cdrom/preseed/ubuntu.seed boot=casper iso-scan/filename=/iso/ubuntu-10.04-desktop-i386.iso splash
+initrd /casper/initrd.lz
+
+title Ubuntu 9.10 i386
+find --set-root /iso/ubuntu-9.10-desktop-i386.iso
+map /iso/ubuntu-9.10-desktop-i386.iso (0xff)
+map --hook
+root (0xff)
+kernel /casper/vmlinuz file=/cdrom/preseed/ubuntu.seed boot=casper iso-scan/filename=/iso/ubuntu-9.10-desktop-i386.iso splash
+initrd /casper/initrd.lz
+
+title Ubuntu 9.04 i386
+find --set-root /iso/ubuntu-9.04-desktop-i386.iso
+map /iso/ubuntu-9.04-desktop-i386.iso (0xff)
+map --hook
+root (0xff)
+kernel /casper/vmlinuz file=/cdrom/preseed/ubuntu.seed boot=casper iso-scan/filename=/iso/ubuntu-9.04-desktop-i386.iso splash
+initrd /casper/initrd.gz
+
+title Linux Mint 9 i386
+find --set-root /iso/linuxmint-9-gnome-cd-i386.iso
+map /iso/linuxmint-9-gnome-cd-i386.iso (0xff)
+map --hook
+root (0xff)
+kernel /casper/vmlinuz file=/cdrom/preseed/mint.seed boot=casper iso-scan/filename=/iso/linuxmint-9-gnome-cd-i386.iso splash
+initrd /casper/initrd.lz
+
+title KNOPPIX 6.0.1 JP
+kernel /KNOPPIX/boot/isolinux/linux ramdisk_size=100000 lang=ja vt.default_utf8=0 apm=power-off vga=791 nomce quiet loglevel=0 tz=localtime
+initrd /KNOPPIX/boot/isolinux/minirt.gz
+
+#find --set-root /KNOPPIX_V6.2.1CD-2010-01-31-EN.iso
+#map /KNOPPIX_V6.2.1CD-2010-01-31-EN.iso (hd32)
+#map --hook
+#root (hd32)
+#chainloader (hd32)
+
+title DSL 4.4.10
+find --set-root /iso/dsl-4.4.10-initrd.iso
+map --mem /iso/dsl-4.4.10-initrd.iso (hd32)
+map --hook
+root (hd32)
+chainloader (hd32)
+
+title NetbootCD 3.2.1
+find --set-root /iso/NetbootCD-3.2.1.iso
+map /iso/NetbootCD-3.2.1.iso (0xff)
+map --hook
+chainloader (0xff)
+
+title CentOS 5.5 i386
+#find --set-root /iso/CentOS-5.5-i386-LiveCD.iso
+#map /iso/CentOS-5.5-i386-LiveCD.iso (hd32)
+#map --hook
+#root (hd32)
+#chainloader (hd32)
+kernel /centos-5.5/vmlinuz0 root=LABEL=MULTIBOOT rootfstype=auto ro quiet liveimg live_dir=/centos-5.5/LiveOS
+initrd /centos-5.5/initrd0.img
+
+title Fedora 12
+kernel /fedora-12/vmlinuz0 root=live:LABEL=MULTIBOOT rootfstype=auto ro liveimg live_dir=/fedora-12/LiveOS quiet rhgb rd_NO_LUKS rd_NO_MD noiswmd
+initrd /fedora-12/initrd0.img
+
+title Sugar on a Stick
+kernel /soas2/isolinux/vmlinuz0 root=live:LABEL=MULTIBOOT rootfstype=auto ro liveimg live_dir=/soas2/LiveOS quiet rhgb rd_NO_LUKS rd_NO_MD noiswmd selinux=0
+initrd /soas2/isolinux/initrd0.img
+
+title SystemRescueCD 1.5.4
+kernel /rescue/isolinux/rescuecd subdir=rescue scandelay=1
+initrd /rescue/isolinux/initram.igz
+
+title openSUSE 11.2
+#find --set-root /iso/openSUSE-11.2-GNOME-LiveCD-i686.iso
+#map /iso/openSUSE-11.2-GNOME-LiveCD-i686.iso (hd32)
+#map --hook
+#root (hd32)
+#chainloader (hd32)
+kernel /opensuse-11.2/boot/i386/loader/linux ramdisk_size=512000 ramdisk_blocksize=4096 splash=silent quiet preloadlog=/dev/null showopts
+initrd /opensuse-11.2/boot/i386/loader/initrd
+
+title commandline
+commandline
+
+title reboot
+reboot
+
+title halt
+halt
