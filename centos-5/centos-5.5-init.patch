@@ -1,0 +1,47 @@
+*** init.org	2010-05-24 17:46:16.725541512 -0700
+--- init	2010-05-24 17:30:19.235005454 -0700
+***************
+*** 46,51 ****
+--- 46,52 ----
+  check_iso=0
+  live_locale=""
+  overlay="off"
++ isofile=""
+  
+  # Parse kernel commandline options
+  #
+***************
+*** 91,96 ****
+--- 92,100 ----
+          blacklist=${o#blacklist=}
+          echo "blacklist $blacklist" >> /etc/modprobe.conf
+          ;;
++     isofile=*)
++ 	isofile=${o#isofile=}
++ 	;;
+      *)
+          m=$(echo $o |cut -s -d . -f 1)
+          opt=$(echo $o |cut -s -d . -f 2-)
+***************
+*** 371,377 ****
+      mountoptions=" -o$rootflags"
+  fi
+  
+! mount -n -t $rootfstype $mountoptions $thingtomount /sysroot
+  RES=$?
+  
+  if [ "$RES" != "0" ] ; then
+--- 375,387 ----
+      mountoptions=" -o$rootflags"
+  fi
+  
+! if [ -z $isofile ] ; then
+!     mount -n -t $rootfstype $mountoptions $thingtomount /sysroot
+! else
+!     mkdir /sysroot-org
+!     mount -n -t $rootfstype $mountoptions $thingtomount /sysroot-org
+!     mount -n -o loop /sysroot-org/$isofile /sysroot
+! fi
+  RES=$?
+  
+  if [ "$RES" != "0" ] ; then

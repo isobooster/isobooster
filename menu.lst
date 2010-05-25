@@ -48,14 +48,17 @@ kernel /casper/vmlinuz file=/cdrom/preseed/mint.seed boot=casper iso-scan/filena
 initrd /casper/initrd.lz
 
 title KNOPPIX 6.0.1 JP
-kernel /KNOPPIX/boot/isolinux/linux ramdisk_size=100000 lang=ja vt.default_utf8=0 apm=power-off vga=791 nomce quiet loglevel=0 tz=localtime
-initrd /KNOPPIX/boot/isolinux/minirt.gz
+kernel /knoppix-6.0.1-jp/boot/isolinux/linux ramdisk_size=100000 lang=ja vt.default_utf8=0 apm=power-off vga=791 nomce quiet loglevel=0 tz=localtime knoppix_dir=knoppix-6.0.1-jp
+initrd /knoppix-6.0.1-jp/boot/isolinux/minirt.gz
 
-#find --set-root /KNOPPIX_V6.2.1CD-2010-01-31-EN.iso
-#map /KNOPPIX_V6.2.1CD-2010-01-31-EN.iso (hd32)
-#map --hook
-#root (hd32)
+title KNOPPIX 6.2.1 EN
+find --set-root /iso/KNOPPIX_V6.2.1CD-2010-01-31-EN.iso
+map /iso/KNOPPIX_V6.2.1CD-2010-01-31-EN.iso (hd32)
+map --hook
+root (hd32)
 #chainloader (hd32)
+kernel /boot/isolinux/linux ramdisk_size=100000 lang=en vt.default_utf8=0 apm=power-off vga=791 nomce quiet loglevel=0 tz=localtime bootfrom=/dev/sdb1/KNOPPIX_V6.2.1CD-2010-01-31-EN.iso
+initrd /boot/isolinux/minirt.gz
 
 title DSL 4.4.10
 find --set-root /iso/dsl-4.4.10-initrd.iso
@@ -71,13 +74,8 @@ map --hook
 chainloader (0xff)
 
 title CentOS 5.5 i386
-#find --set-root /iso/CentOS-5.5-i386-LiveCD.iso
-#map /iso/CentOS-5.5-i386-LiveCD.iso (hd32)
-#map --hook
-#root (hd32)
-#chainloader (hd32)
-kernel /centos-5.5/vmlinuz0 root=LABEL=MULTIBOOT rootfstype=auto ro quiet liveimg live_dir=/centos-5.5/LiveOS
-initrd /centos-5.5/initrd0.img
+kernel /centos-5/vmlinuz0-5.5 root=LABEL=MULTIBOOT rootfstype=auto ro quiet liveimg isofile=iso/CentOS-5.5-i386-LiveCD.iso
+initrd /centos-5/initrd-5.5-mod.gz
 
 title Fedora 12
 kernel /fedora-12/vmlinuz0 root=live:LABEL=MULTIBOOT rootfstype=auto ro liveimg live_dir=/fedora-12/LiveOS quiet rhgb rd_NO_LUKS rd_NO_MD noiswmd
@@ -97,8 +95,15 @@ title openSUSE 11.2
 #map --hook
 #root (hd32)
 #chainloader (hd32)
-kernel /opensuse-11.2/boot/i386/loader/linux ramdisk_size=512000 ramdisk_blocksize=4096 splash=silent quiet preloadlog=/dev/null showopts
+kernel /opensuse-11.2/boot/i386/loader/linux ramdisk_size=512000 ramdisk_blocksize=4096 splash=silent quiet preloadlog=/dev/null showopts root=LABEL=MULTIBOOT
 initrd /opensuse-11.2/boot/i386/loader/initrd
+
+title Puppy Linux 5
+find --set-root /iso/lupu-500.iso
+map /iso/lupu-500.iso (hd32)
+map --hook
+root (hd32)
+chainloader (hd32)
 
 title commandline
 commandline
