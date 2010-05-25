@@ -1,25 +1,25 @@
-*** ./sbin/dmsquash-live-root.org	2010-05-24 22:59:45.152319024 -0700
---- ./sbin/dmsquash-live-root	2010-05-25 04:02:12.711701664 -0700
+*** ./sbin/dmsquash-live-root.org	2010-05-25 16:18:55.212114814 -0700
+--- ./sbin/dmsquash-live-root	2010-05-25 16:16:47.142049444 -0700
 ***************
-*** 14,19 ****
---- 14,30 ----
-  [ -z "$1" ] && exit 1
-  livedev="$1"
-  
-+ # Mount the backing device for the ISO if necessary
-+ if [ "${livedev%%:*}" = "liveiso" ]; then
-+     if [ -n "$root" ]; then
-+         mkdir -p /liveiso
-+         mount -t ${fstype:-auto} -o ro "${root#liveiso:}" /liveiso
-+         livedev=`/sbin/losetup -f --show /liveiso/${livedev#liveiso:}`
-+     else
-+         livedev=`/sbin/losetup -f --show ${livedev#liveiso:}`
-+     fi
+*** 40,45 ****
+--- 40,56 ----
+  getarg rw && liverw=rw
+  [ -z "$liverw" ] && liverw=ro
+  # mount the backing of the live image first
++ isofile=$(getarg isofile)
++ if [ -n $isofile ]; then
++     mkdir -p /liveiso
++     liveisodev=$livedev
++     liveisorw=$liverw
++     liveisofstype=$fstype
++     mount -n -t $liveisofstype -o $liveisorw $liveisodev /liveiso
++     livedev="/liveiso/$isofile"
++     liverw="loop,ro"
++     fstype="iso9660"
 + fi
-+ 
-  # parse various live image specific options that make sense to be
-  # specified as their own things
-  live_dir=$(getarg live_dir)
+  mount -n -t $fstype -o $liverw $livedev $NEWROOT
+  RES=$?
+  if [ "$RES" != "0" ]; then
 ***************
 *** 145,151 ****
           dd if=$SQUASHED of=/squashed.img bs=512 2> /dev/null
@@ -33,117 +33,12 @@
           dd if=$SQUASHED of=/squashed.img bs=512 2> /dev/null
           umount -n $NEWROOT
           echo "Done copying live image to RAM."
-!         if [ -e "/liveiso" ]; then
-!             umount /liveiso
-!             rmdir /liveiso
-!         else
+! 	if [ -n "$isofile" ]; then
+! 	    umount -n /liveiso
+! 	    rmdir /liveiso
+! 	else
 !             eject -p $livedev || :
-!         fi
+! 	fi
           SQUASHED="/squashed.img"
       fi
   
-***************
-*** 174,177 ****
---- 190,198 ----
-  ln -s /dev/mapper/live-rw /dev/root
-  printf '/bin/mount /dev/mapper/live-rw %s\n' "$NEWROOT" > /mount/01-$$-live.sh
-  
-+ if [ -e "/liveiso" ]; then
-+     printf '/bin/mkdir -p %s/isodevice\n' "$NEWROOT" >> /mount/01-$$-live.sh
-+     printf '/bin/mount --bind /liveiso %s/isodevice\n' "$NEWROOT" >> /mount/01-$$-live.sh
-+ fi
-+ 
-  exit 0
-*** ./cmdline/30parse-dmsquash-live.sh.org	2010-05-25 03:27:57.139659935 -0700
---- ./cmdline/30parse-dmsquash-live.sh	2010-05-25 03:47:42.275693877 -0700
-***************
-*** 14,39 ****
-  
-  [ "${liveroot%%:*}" = "live" ] || return
-  
-  case "$liveroot" in
-      live:LABEL=*|LABEL=*)
-  	root="${root#live:}"
-  	root="$(echo $root | sed 's,/,\\x2f,g')"
-! 	root="live:/dev/disk/by-label/${root#LABEL=}"
-          rootok=1 ;;
-      live:CDLABEL=*|CDLABEL=*)
-  	root="${root#live:}"
-  	root="$(echo $root | sed 's,/,\\x2f,g')"
-! 	root="live:/dev/disk/by-label/${root#CDLABEL=}"
-          rootok=1 ;;
-      live:UUID=*|UUID=*)
-  	root="${root#live:}"
-! 	root="live:/dev/disk/by-uuid/${root#UUID=}"
-          rootok=1 ;;
-      /dev/*)
-  	root="live:${root}"
-          rootok=1 ;;
-  esac
-! info "root was $root, liveroot is now $liveroot"
-  
-  # make sure that init doesn't complain
-  [ -z "$root" ] && root="live"
---- 14,59 ----
-  
-  [ "${liveroot%%:*}" = "live" ] || return
-  
-+ liveiso="${liveroot##*:}"
-+ if [ "${liveroot#*:}" = "$liveiso" ] ; then
-+     liveiso=
-+ else
-+     root="${liveroot%:*}"
-+ fi
-+ 
-+ rootok=0
-  case "$liveroot" in
-      live:LABEL=*|LABEL=*)
-  	root="${root#live:}"
-  	root="$(echo $root | sed 's,/,\\x2f,g')"
-! 	root="/dev/disk/by-label/${root#LABEL=}"
-          rootok=1 ;;
-      live:CDLABEL=*|CDLABEL=*)
-  	root="${root#live:}"
-  	root="$(echo $root | sed 's,/,\\x2f,g')"
-! 	root="/dev/disk/by-label/${root#CDLABEL=}"
-          rootok=1 ;;
-      live:UUID=*|UUID=*)
-  	root="${root#live:}"
-! 	root="/dev/disk/by-uuid/${root#UUID=}"
-          rootok=1 ;;
-+     live:/*.[Ii][Ss][Oo]|/*.[Ii][Ss][Oo])
-+ 	liveiso="${root#live:}"
-+ 	root=
-+ 	rootok=1 ;;
-      /dev/*)
-  	root="live:${root}"
-          rootok=1 ;;
-  esac
-!  	
-! 
-! if [ -n "$liveiso" ]; then
-!     root="liveiso:$root"
-! else
-!     root="live:$root"
-! fi
-! 
-! info "root was $liveroot, liveroot is now $root"
-  
-  # make sure that init doesn't complain
-  [ -z "$root" ] && root="live"
-*** ./pre-udev/30dmsquash-live-genrules.sh.org	2010-05-25 03:53:55.711663524 -0700
---- ./pre-udev/30dmsquash-live-genrules.sh	2010-05-25 03:51:41.379695431 -0700
-***************
-*** 12,14 ****
---- 12,22 ----
-      ) >> /etc/udev/rules.d/99-live-mount.rules
-      echo '[ -e /dev/root ]' > /initqueue-finished/dmsquash.sh
-  fi
-+ 
-+ if [ "${root%%:*}" = "liveiso" ]; then
-+     (
-+ 	printf 'KERNEL=="loop0", RUN+="/sbin/initqueue --settled --onetime --unique /sbin/dmsquash-live-root liveiso:%s"\n' \
-+ 	    ${liveiso}
-+ 	) >> /etc/udev/rules.d/99-liveiso-mount.rules
-+     echo '[ -e /dev/root ]' > /initqueue-finished/dmsquash.sh
-+ fi

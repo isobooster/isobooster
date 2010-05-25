@@ -2,12 +2,11 @@
 
 # change base dir
 CURDIR=$(pwd)
-USBROOT=$(dirname $0)
+cd $(dirname $0)
+USBROOT=$(pwd)
 WORKROOT=/tmp
 MENUFILE=menu.lst
 BOOTFILE=boot.lst
-
-cd $USBROOT
 
 prepareiso()
 {
@@ -63,12 +62,12 @@ geninitrd_centos()
     mkdir -pv /mnt/iso $DST || exit 1
     mount -v -o loop -t iso9660 iso/$ISO /mnt/iso || exit 1
     cp -v /mnt/iso/isolinux/vmlinuz0 $DST/vmlinuz-$VER
-    cp -v /mnt/iso/isolinux/initrd0.img $DST
+    cp -v /mnt/iso/isolinux/initrd0.img $DST/initrd-${VER}.img
     umount -v /mnt/iso
     rmdir /mnt/iso
     # apply patch
-    geninitrd $DST $VER initrd0.img $PATCH
-    rm $DST/initrd0.img
+    geninitrd $DST $VER initrd-${VER}.img $PATCH
+#    rm $DST/initrd0.img
 }
 
 geninitrd_knoppix()
@@ -81,12 +80,12 @@ geninitrd_knoppix()
     mkdir -pv /mnt/iso $DST || exit 1
     mount -v -o loop -t iso9660 iso/$ISO /mnt/iso || exit 1
     cp -v /mnt/iso/boot/isolinux/linux $DST/linux-$VER
-    cp -v /mnt/iso/boot/isolinux/minirt.gz $DST
+    cp -v /mnt/iso/boot/isolinux/minirt.gz $DST/minirt-${VER}.gz
     umount -v /mnt/iso
     rmdir /mnt/iso
     # apply patch
-    geninitrd $DST $VER minirt.gz $PATCH
-    rm $DST/minirt.gz
+    geninitrd $DST $VER minirt-${VER}.gz $PATCH
+#    rm $DST/minirt.gz
 }
 
 copyiso()
