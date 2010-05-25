@@ -253,6 +253,19 @@ case $DISTRO in
 	copyiso puppy-5.00 $ISOFILE
 	addboot puppy-5.00
 	;;
+    pmagic-4.10)
+	ISOFILE=pmagic-4.10.iso
+	BASEURL=http://downloads.sourceforge.net/project/partedmagic/partedmagic/Parted%20Magic%204.10
+	if [ ! -f iso/$ISOFILE ]; then
+	    wget $BASEURL/${ISOFILE}.zip -O iso/${ISOFILE}.zip || exit 1
+	    pushd iso
+	    unzip -v ${ISOFILE}.zip || exit 1
+	    rm -v ${ISOFILE}.zip
+	    popd
+	fi
+#	prepareiso $ISOFILE $BASEURL
+	addboot pmagic-4.10
+	;;
     *)
 	echo "$DISTRO is not supported."
 	;;
