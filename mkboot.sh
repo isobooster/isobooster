@@ -254,6 +254,13 @@ case $DISTRO in
 	geninitrd_centos fedora 12 $ISOFILE fedora/fedora-12.patch
 	addboot fedora-12
 	;;
+    fedora-13)
+	ISOFILE=Fedora-13-i686-Live.iso
+	BASEURL=http://download.fedoraproject.org/pub/fedora/linux/releases/13/Live/i686
+	prepareiso $ISOFILE $BASEURL
+	geninitrd_centos fedora 13 $ISOFILE fedora/fedora-12.patch
+	addboot fedora-13
+	;;
     soas2)
 	ISOFILE=soas-2-blueberry.iso
 	BASEURL=http://download.sugarlabs.org/soas/releases
