@@ -1,19 +1,37 @@
 *** init.org	2010-05-24 19:44:16.484950321 -0700
---- init	2010-05-24 21:25:27.845891679 -0700
+--- init	2010-05-25 04:34:12.886602545 -0700
 ***************
-*** 134,139 ****
---- 134,144 ----
+*** 134,141 ****
+    if [ -r /mnt-system/"$knoppix_dir"/KNOPPIX ]; then
+     echo -e "\r${CRE}${GREEN}$DISTRO ${FOUNDAT}: ${MAGENTA}$dev${NORMAL}       "
+     return 0
+    fi
+-   umount /mnt-system
+   done
+   return 1
+  }
+--- 134,154 ----
     if [ -r /mnt-system/"$knoppix_dir"/KNOPPIX ]; then
      echo -e "\r${CRE}${GREEN}$DISTRO ${FOUNDAT}: ${MAGENTA}$dev${NORMAL}       "
      return 0
 +   elif [ -n "$ISOFILE" -a -r "/mnt-system/$ISOFILE" ]; then
 +       umount /mnt-system
-+       mkdir /mnt-basesystem
++       mkdir -p /mnt-basesystem
 +       trymount "$dev" /mnt-basesystem >/dev/null 2>&1
 +       mount -t iso9660 -o loop,ro "/mnt-basesystem/$ISOFILE" /mnt-system
++       if [ -r /mnt-system/"$knoppix_dir"/KNOPPIX ]; then
++ 	  echo -e "\r${CRE}${GREEN}$DISTRO ${FOUNDAT}: ${MAGENTA}${dev}/${ISOFILE}${NORMAL}       "
++ 	  return 0
++       else
++ 	  umount /mnt-system
++ 	  umount /mnt-basesystem
++       fi
++   else
++       umount /mnt-system
     fi
-    umount /mnt-system
    done
+   return 1
+  }
 ***************
 *** 283,289 ****
   
@@ -23,7 +41,7 @@
    [ -n "$ip" ] && IP="$ip"
    [ -n "$nm" ] && NM="$nm"
    [ -n "$gw" ] && GW="$gw"
---- 288,294 ----
+--- 296,302 ----
   
   if [ -n "$TSCLIENT" ]; then
    # Split cmdline, find NFSDIR variable

@@ -8,8 +8,8 @@ USBROOT=$(pwd)
 
 prepareiso()
 {
-    ISO=$1
-    BASEURL=$2
+    local ISO=$1
+    local BASEURL=$2
 
     if [ ! -r iso/$ISO ]; then
 	if [ -n "$BASEURL" ]; then
@@ -22,24 +22,18 @@ prepareiso()
     fi
 }
 
-geninitrd_centos()
+geninitrd()
 {
-    ISO=$3
-    DST=$1
-    PATCH=$4
-    VER=$2
+    local DST=$1
+    local VER=$2
+    local PATCH=$4
+    local SOURCE=$3
+    local WORK=$WORKROOT/cpio-work
 
-    mkdir -pv /mnt/iso $DST || exit 1
-    mount -v -o loop -t iso9660 iso/$ISO /mnt/iso || exit 1
-    cp -v /mnt/iso/isolinux/vmlinuz0 $DST/vmlinuz-$VER
-    cp -v /mnt/iso/isolinux/initrd0.img $DST
-    umount -v /mnt/iso
-    rmdir /mnt/iso
-    # apply patch
-    WORK=$WORKROOT/centos-cpio
+    rm -rf $WORK
     mkdir -pv $WORK
     pushd $WORK
-    zcat $USBROOT/$DST/initrd0.img | cpio -i -H newc --no-absolute-filenames
+    zcat $USBROOT/$DST/$SOURCE | cpio -i -H newc --no-absolute-filenames
     if [ ! -f init ]; then
 	echo "Fail to extract initrd."
 	exit 1
@@ -53,13 +47,48 @@ geninitrd_centos()
 	exit 1
     fi
     rm -rf $WORK
+}
+
+geninitrd_centos()
+{
+    local ISO=$2
+    local DST=centos
+    local PATCH=$3
+    local VER=$1
+
+    mkdir -pv /mnt/iso $DST || exit 1
+    mount -v -o loop -t iso9660 iso/$ISO /mnt/iso || exit 1
+    cp -v /mnt/iso/isolinux/vmlinuz0 $DST/vmlinuz-$VER
+    cp -v /mnt/iso/isolinux/initrd0.img $DST
+    umount -v /mnt/iso
+    rmdir /mnt/iso
+    # apply patch
+    geninitrd $DST $VER initrd0.img $PATCH
     rm $DST/initrd0.img
+}
+
+geninitrd_knoppix()
+{
+    local ISO=$2
+    local DST=knoppix
+    local PATCH=$3
+    local VER=$1
+
+    mkdir -pv /mnt/iso $DST || exit 1
+    mount -v -o loop -t iso9660 iso/$ISO /mnt/iso || exit 1
+    cp -v /mnt/iso/boot/isolinux/linux $DST/linux-$VER
+    cp -v /mnt/iso/boot/isolinux/minirt.gz $DST
+    umount -v /mnt/iso
+    rmdir /mnt/iso
+    # apply patch
+    geninitrd $DST $VER minirt.gz $PATCH
+    rm $DST/minirt.gz
 }
 
 copyiso()
 {
-    ISO=$2
-    DST=$1
+    local ISO=$2
+    local DST=$1
 
     if [ -d $DST ]; then
 	# clean previous folder first
@@ -74,8 +103,8 @@ copyiso()
 
 copyknoppix()
 {
-    ISO=$2
-    DST=$1
+    local ISO=$2
+    local DST=$1
 
     if [ -d $DST ]; then
 	# clean previous folder first
@@ -149,24 +178,24 @@ case $DISTRO in
 	prepareiso $ISOFILE $BASEURL
 	copyiso $DISTRO $ISOFILE
 	;;
-    knoppix-jp)
+    knoppix-jp|knoppix-6.0.1-jp)
 	# japanese version
 	ISOFILE=knoppix_v6.0.1CD_20090208-20090225_opt.iso
 	BASEURL=http://ring.aist.go.jp/pub/linux/knoppix/iso
 	prepareiso $ISOFILE $BASEURL
-	copyknoppix knoppix-6.0.1-jp $ISOFILE
+	geninitrd_knoppix 6.0.1-jp $ISOFILE knoppix/knoppix-6.0.1-jp.patch
 	;;
-    rescue)
+    rescue|rescue-1.5.4)
 	ISOFILE=systemrescuecd-x86-1.5.4.iso
 	BASEURL=http://downloads.sourceforge.net/project/systemrescuecd/sysresccd-x86/1.5.4
 	prepareiso $ISOFILE $BASEURL
 	copyiso $DISTRO $ISOFILE
 	;;
-    centos-5)
+    centos-5|centos-5.5)
 	ISOFILE=CentOS-5.5-i386-LiveCD.iso
 	BASEURL=http://ftp.osuosl.org/pub/centos/5.5/isos/i386
 	prepareiso $ISOFILE $BASEURL
-	geninitrd_centos centos 5.5 $ISOFILE centos/centos-5.5-init.patch
+	geninitrd_centos 5.5 $ISOFILE centos/centos-5.5.patch
 	;;
     opensuse-11)
 	ISOFILE=openSUSE-11.2-GNOME-LiveCD-i686.iso

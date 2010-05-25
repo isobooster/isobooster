@@ -48,10 +48,8 @@ kernel /casper/vmlinuz file=/cdrom/preseed/mint.seed boot=casper iso-scan/filena
 initrd /casper/initrd.lz
 
 title KNOPPIX 6.0.1 JP
-#kernel /knoppix-6.0.1-jp/boot/isolinux/linux ramdisk_size=100000 lang=ja vt.default_utf8=0 apm=power-off vga=791 nomce quiet loglevel=0 tz=localtime knoppix_dir=knoppix-6.0.1-jp
-#initrd /knoppix-6.0.1-jp/boot/isolinux/minirt.gz
-kernel /knoppix/linux-6.0.1 ramdisk_size=100000 lang=ja vt.default_utf8=0 apm=power-off vga=791 nomce ISOFILE=iso/knoppix_v6.0.1CD_20090208-20090225_opt.iso loglevel=0 tz=localtime
-initrd /knoppix/initrd-mod-6.0.1.gz
+kernel /knoppix/linux-6.0.1-jp ramdisk_size=100000 lang=ja vt.default_utf8=0 apm=power-off vga=791 nomce ISOFILE=iso/knoppix_v6.0.1CD_20090208-20090225_opt.iso loglevel=0 tz=localtime
+initrd /knoppix/initrd-mod-6.0.1-jp.gz
 
 title KNOPPIX 6.2.1 EN
 find --set-root /iso/KNOPPIX_V6.2.1CD-2010-01-31-EN.iso
@@ -80,8 +78,9 @@ kernel /centos/vmlinuz-5.5 root=LABEL=MULTIBOOT rootfstype=auto ro quiet liveimg
 initrd /centos/initrd-mod-5.5.gz
 
 title Fedora 12
-kernel /fedora-12/vmlinuz0 root=live:LABEL=MULTIBOOT rootfstype=auto ro liveimg live_dir=/fedora-12/LiveOS quiet rhgb rd_NO_LUKS rd_NO_MD noiswmd
-initrd /fedora-12/initrd0.img
+#kernel /fedora-12/vmlinuz0 root=LABEL=MULTIBOOT liveroot=iso/Fedora-12.iso rootfstype=auto ro rhgb rd_NO_LUKS rd_NO_MD noiswmd
+kernel /fedora/vmlinuz-12 root=live:LABEL=MULTIBOOT:/iso/Fedora-12-i686-Live.iso rootfstype=auto ro rhgb rd_NO_LUKS rd_NO_MD noiswmd
+initrd /fedora/initrd-mod-12.gz
 
 title Sugar on a Stick
 kernel /soas2/isolinux/vmlinuz0 root=live:LABEL=MULTIBOOT rootfstype=auto ro liveimg live_dir=/soas2/LiveOS quiet rhgb rd_NO_LUKS rd_NO_MD noiswmd selinux=0
