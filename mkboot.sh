@@ -1,12 +1,13 @@
 #!/bin/bash
 
 # change base dir
-cd `dirname $0`
-
+CURDIR=$(pwd)
+USBROOT=$(dirname $0)
 WORKROOT=/tmp
-USBROOT=$(pwd)
 MENUFILE=menu.lst
 BOOTFILE=boot.lst
+
+cd $USBROOT
 
 prepareiso()
 {
@@ -317,6 +318,19 @@ case $DISTRO in
 #	prepareiso $ISOFILE $BASEURL
 	addboot pmagic-4.10
 	;;
+
+    # for development
+    genpatch)
+	PATCH=$2
+	cd $CURDIR
+	find . -name *.org | sed 's/\.org$//' | xargs -iF diff -c F.org F > $PATCH
+	;;
+    applypatch)
+	PATCH=$2
+	cd $CURDIR
+	patch -p0 -b -z .org -i $PATCH
+	;;
+
     *)
 	echo "$DISTRO is not supported."
 	;;
