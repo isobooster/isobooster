@@ -85,6 +85,24 @@ geninitrd_knoppix()
     rm $DST/minirt.gz
 }
 
+geninitrd_fedora()
+{
+    local ISO=$2
+    local DST=fedora
+    local PATCH=$3
+    local VER=$1
+
+    mkdir -pv /mnt/iso $DST || exit 1
+    mount -v -o loop -t iso9660 iso/$ISO /mnt/iso || exit 1
+    cp -v /mnt/iso/isolinux/vmlinuz0 $DST/vmlinuz-$VER
+    cp -v /mnt/iso/isolinux/initrd0.img $DST
+    umount -v /mnt/iso
+    rmdir /mnt/iso
+    # apply patch
+    geninitrd $DST $VER initrd0.img $PATCH
+    rm $DST/initrd0.img
+}
+
 copyiso()
 {
     local ISO=$2
@@ -170,7 +188,7 @@ case $DISTRO in
 	ISOFILE=Fedora-12-i686-Live.iso
 	BASEURL=http://download.fedoraproject.org/pub/fedora/linux/releases/12/Live/i686
 	prepareiso $ISOFILE $BASEURL
-	copyiso $DISTRO $ISOFILE
+	geninitrd_fedora 12 $ISOFILE fedora/fedora-12.patch
 	;;
     soas2)
 	ISOFILE=soas-2-blueberry.iso
@@ -207,5 +225,6 @@ case $DISTRO in
 	ISOFILE=lupu-500.iso
 	BASEURL=http://distro.ibiblio.org/pub/linux/distributions/puppylinux/puppy-5.0
 	prepareiso $ISOFILE $BASEURL
+	copyiso $DISTRO $ISOFILE
 	;;
 esac

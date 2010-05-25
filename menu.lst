@@ -100,11 +100,13 @@ kernel /opensuse-11.2/boot/i386/loader/linux ramdisk_size=512000 ramdisk_blocksi
 initrd /opensuse-11.2/boot/i386/loader/initrd
 
 title Puppy Linux 5
-find --set-root /iso/lupu-500.iso
-map /iso/lupu-500.iso (hd32)
-map --hook
-root (hd32)
-chainloader (hd32)
+find --set-root /puppy-5/lupu-500.sfs
+#map /iso/lupu-500.iso (hd32)
+#map --hook
+#root (hd32)
+#chainloader (hd32)
+kernel /puppy-5/vmlinuz
+initrd /puppy-5/initrd.gz
 
 title commandline
 commandline
