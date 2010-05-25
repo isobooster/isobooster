@@ -1,15 +1,19 @@
-#!/bin/sh
+#!/bin/bash
 
 # change base dir
 cd `dirname $0`
+
+WORKROOT=/tmp
+USBROOT=$(pwd)
 
 prepareiso()
 {
     ISO=$1
     BASEURL=$2
 
-    if [ ! -f iso/$ISO ]; then
+    if [ ! -r iso/$ISO ]; then
 	if [ -n "$BASEURL" ]; then
+	    mkdir -pv iso || exit 1
 	    wget ${BASEURL}/$ISO -O iso/$ISO || exit 1
 	else
 	    echo "$ISO is not exist."
@@ -18,13 +22,44 @@ prepareiso()
     fi
 }
 
+geninitrd_centos()
+{
+    ISO=$3
+    DST=$1
+    PATCH=$4
+    VER=$2
+
+    mkdir -pv /mnt/iso $DST || exit 1
+    mount -v -o loop -t iso9660 iso/$ISO /mnt/iso || exit 1
+    cp -v /mnt/iso/isolinux/vmlinuz0 $DST/vmlinuz-$VER
+    cp -v /mnt/iso/isolinux/initrd0.img $DST
+    umount -v /mnt/iso
+    rmdir /mnt/iso
+    # apply patch
+    WORK=$WORKROOT/centos-cpio
+    mkdir -pv $WORK
+    pushd $WORK
+    zcat $USBROOT/$DST/initrd0.img | cpio -i -H newc --no-absolute-filenames
+    if [ ! -f init ]; then
+	echo "Fail to extract initrd."
+	exit 1
+    fi
+    patch -p0 < $USBROOT/$PATCH || exit 1
+    echo "Creating patched initrd"
+    find . | cpio -o -H newc | gzip - > $USBROOT/$DST/initrd-mod-${VER}.gz
+    popd
+    if [ ! -s $DST/initrd-mod-${VER}.gz ]; then
+	echo "Fail to generate initrd."
+	exit 1
+    fi
+    rm -rf $WORK
+    rm $DST/initrd0.img
+}
+
 copyiso()
 {
     ISO=$2
     DST=$1
-    BASEURL=$3
-
-    prepareiso $ISO $BASEURL
 
     if [ -d $DST ]; then
 	# clean previous folder first
@@ -41,9 +76,6 @@ copyknoppix()
 {
     ISO=$2
     DST=$1
-    BASEURL=$3
-
-    prepareiso $ISO $BASEURL
 
     if [ -d $DST ]; then
 	# clean previous folder first
@@ -108,34 +140,39 @@ case $DISTRO in
     fedora-12)
 	ISOFILE=Fedora-12-i686-Live.iso
 	BASEURL=http://download.fedoraproject.org/pub/fedora/linux/releases/12/Live/i686
-	copyiso $DISTRO $ISOFILE $BASEURL
+	prepareiso $ISOFILE $BASEURL
+	copyiso $DISTRO $ISOFILE
 	;;
     soas2)
 	ISOFILE=soas-2-blueberry.iso
 	BASEURL=http://download.sugarlabs.org/soas/releases
-	copyiso $DISTRO $ISOFILE $BASEURL
+	prepareiso $ISOFILE $BASEURL
+	copyiso $DISTRO $ISOFILE
 	;;
     knoppix-jp)
 	# japanese version
 	ISOFILE=knoppix_v6.0.1CD_20090208-20090225_opt.iso
 	BASEURL=http://ring.aist.go.jp/pub/linux/knoppix/iso
-	copyknoppix knoppix-6.0.1-jp $ISOFILE $BASEURL
+	prepareiso $ISOFILE $BASEURL
+	copyknoppix knoppix-6.0.1-jp $ISOFILE
 	;;
     rescue)
 	ISOFILE=systemrescuecd-x86-1.5.4.iso
 	BASEURL=http://downloads.sourceforge.net/project/systemrescuecd/sysresccd-x86/1.5.4
-	copyiso $DISTRO $ISOFILE $BASEURL
+	prepareiso $ISOFILE $BASEURL
+	copyiso $DISTRO $ISOFILE
 	;;
     centos-5)
 	ISOFILE=CentOS-5.5-i386-LiveCD.iso
 	BASEURL=http://ftp.osuosl.org/pub/centos/5.5/isos/i386
-	copyiso centos-5.5 $ISOFILE $BASEURL
-	mv centos-5.5/LiveOS .
+	prepareiso $ISOFILE $BASEURL
+	geninitrd_centos centos 5.5 $ISOFILE centos/centos-5.5-init.patch
 	;;
     opensuse-11)
 	ISOFILE=openSUSE-11.2-GNOME-LiveCD-i686.iso
 	BASEURL=http://download.opensuse.org/distribution/11.2/iso
-	copyiso opensuse-11.2 $ISOFILE $BASEURL
+	prepareiso $ISOFILE $BASEURL
+	copyiso opensuse-11.2 $ISOFILE
 	;;
     puppy-5)
 	ISOFILE=lupu-500.iso

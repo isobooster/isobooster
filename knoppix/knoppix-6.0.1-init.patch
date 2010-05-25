@@ -1,0 +1,33 @@
+*** init.org	2010-05-24 19:44:16.484950321 -0700
+--- init	2010-05-24 21:25:27.845891679 -0700
+***************
+*** 134,139 ****
+--- 134,144 ----
+    if [ -r /mnt-system/"$knoppix_dir"/KNOPPIX ]; then
+     echo -e "\r${CRE}${GREEN}$DISTRO ${FOUNDAT}: ${MAGENTA}$dev${NORMAL}       "
+     return 0
++   elif [ -n "$ISOFILE" -a -r "/mnt-system/$ISOFILE" ]; then
++       umount /mnt-system
++       mkdir /mnt-basesystem
++       trymount "$dev" /mnt-basesystem >/dev/null 2>&1
++       mount -t iso9660 -o loop,ro "/mnt-basesystem/$ISOFILE" /mnt-system
+    fi
+    umount /mnt-system
+   done
+***************
+*** 283,289 ****
+  
+  if [ -n "$TSCLIENT" ]; then
+   # Split cmdline, find NFSDIR variable
+!  for i in $CMDLINE; do case "$i" in [Ii][Pp]=*|[Nn][Mm]=*|[Gg][Ww]=*|[Nn][Ff][Ss][Dd][Ii][Rr]=*) eval $i;; esac; done
+   [ -n "$ip" ] && IP="$ip"
+   [ -n "$nm" ] && NM="$nm"
+   [ -n "$gw" ] && GW="$gw"
+--- 288,294 ----
+  
+  if [ -n "$TSCLIENT" ]; then
+   # Split cmdline, find NFSDIR variable
+!  for i in $CMDLINE; do case "$i" in [Ii][Pp]=*|[Nn][Mm]=*|[Gg][Ww]=*|[Nn][Ff][Ss][Dd][Ii][Rr]=*|ISOFILE=*) eval $i;; esac; done
+   [ -n "$ip" ] && IP="$ip"
+   [ -n "$nm" ] && NM="$nm"
+   [ -n "$gw" ] && GW="$gw"
