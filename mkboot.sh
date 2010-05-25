@@ -125,17 +125,53 @@ addboot()
 
 genmenu()
 {
-    # sort the order
-    sort $BOOTFILE > ${BOOTFILE}.new
-    mv -fv ${BOOTFILE}.new ${BOOTFILE}
     # generate menu file
     cat cfg/head.cfg > $MENUFILE
-    while read line; do
-	cat cfg/${line}.cfg >> $MENUFILE
-	echo "" >> $MENUFILE
-    done < $BOOTFILE
+    sort $BOOTFILE | while read line; do
+	if [ -f cfg/${line}.cfg ]; then
+	    cat cfg/${line}.cfg >> $MENUFILE
+	    echo "" >> $MENUFILE
+	else
+	    echo "[warn] ignore ${line}"
+	fi
+    done
     cat cfg/tail.cfg >> $MENUFILE
-    echo "New menu was generated."
+    echo "Boot menu was updated."
+}
+
+installsyslinux()
+{
+    local USBDEV=$1
+    if [ -z $USBDEV ]; then
+	echo "Please specify USB device partition."
+	exit 1
+    fi
+    if [ -z $(which syslinux) ]; then
+	echo "Please install syslinux and try again."
+	exit 1
+    fi
+
+    syslinux $USBDEV || exit 1
+    echo "Syslinux was installed."
+}
+
+installgrub4dos()
+{
+    local BASEURL=http://download.gna.org/grub4dos/
+    local ZIPFILE=grub4dos-0.4.4-2009-06-20.zip
+    local VER=0.4.4
+    local GRUBFILE=grub.exe
+
+    if [ ! -f $GRUBFILE ]; then
+	wget $BASEURL/$ZIPFILE -O $ZIPFILE || exit 1
+	unzip -o $ZIPFILE grub4dos-${VER}/$GRUBFILE || exit 1
+	mv -v grub4dos-${VER}/$GRUBFILE .
+	rm -rv grub4dos-${VER}
+	rm -v $ZIPFILE
+	echo "Grub4dos was installed."
+    else
+	echo "Grub4dos is exist."
+    fi
 }
 
 if [ -z "$1" ]; then
@@ -143,7 +179,7 @@ if [ -z "$1" ]; then
     exit 1
 fi
 
-if [ -z `which wget` ]; then
+if [ -z $(which wget) ]; then
     echo "Please install wget first."
     exit 1
 fi
@@ -151,14 +187,29 @@ fi
 DISTRO=$1
 
 case $DISTRO in
+    bootloader)
+	installsyslinux $2
+	installgrub4dos
+	;;
     genmenu)
 	genmenu
+	;;
+    create-casper-rw)
+	if [ -f casper-rw ]; then
+	    echo "casper-rw is exist."
+	    exit 1
+	fi
+	SIZE=$2
+	SIZE=${SIZE:-1024}
+	dd if=/dev/zero of=casper-rw bs=1M count=$SIZE || exit 1
+	mkfs.ext3 -j -F casper-rw || exit 1
+	echo "casper-rw was created."
 	;;
     ubuntu-8.04)
 	ISOFILE=ubuntu-8.04.4-desktop-i386.iso
 	BASEURL=http://releases.ubuntu.com/8.04.4
 	prepareiso $ISOFILE $BASEURL
-	addboot ubuntu-8.04
+	addboot ubuntu-8.04.4
 	;;
     ubuntu-9.04)
 	ISOFILE=ubuntu-9.04-desktop-i386.iso
