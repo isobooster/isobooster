@@ -6,7 +6,7 @@
   getarg rw && liverw=rw
   [ -z "$liverw" ] && liverw=ro
   # mount the backing of the live image first
-+ isofile=$(getarg isofile)
++ isofile=$(getarg iso-scan/filename)
 + if [ -n $isofile ]; then
 +     mkdir -p /liveiso
 +     liveisodev=$livedev

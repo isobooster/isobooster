@@ -88,6 +88,24 @@ geninitrd_knoppix()
 #    rm $DST/minirt.gz
 }
 
+geninitrd_opensuse()
+{
+    local ISO=$2
+    local DST=opensuse
+    local PATCH=$3
+    local VER=$1
+
+    mkdir -pv /mnt/iso $DST || exit 1
+    mount -v -o loop -t iso9660 iso/$ISO /mnt/iso || exit 1
+    cp -v /mnt/iso/boot/i386/loader/linux $DST/linux-$VER
+    cp -v /mnt/iso/boot/i386/loader/initrd $DST/initrd-${VER}
+    umount -v /mnt/iso
+    rmdir /mnt/iso
+    # apply patch
+    geninitrd $DST $VER initrd-${VER} $PATCH
+#    rm $DST/minirt.gz
+}
+
 copyiso()
 {
     local ISO=$2
@@ -265,7 +283,7 @@ case $DISTRO in
 	ISOFILE=soas-2-blueberry.iso
 	BASEURL=http://download.sugarlabs.org/soas/releases
 	prepareiso $ISOFILE $BASEURL
-	copyiso soas2 $ISOFILE
+	geninitrd_centos fedora soas2 $ISOFILE fedora/fedora-12.patch
 	addboot soas2
 	;;
     knoppix-jp|knoppix-6.0.1-jp)
@@ -301,7 +319,7 @@ case $DISTRO in
 	ISOFILE=openSUSE-11.2-GNOME-LiveCD-i686.iso
 	BASEURL=http://download.opensuse.org/distribution/11.2/iso
 	prepareiso $ISOFILE $BASEURL
-	copyiso opensuse-11.2 $ISOFILE
+	geninitrd_opensuse 11.2 $ISOFILE opensuse/opensuse-11.2.patch
 	addboot opensuse-11.2
 	;;
     puppy-5|puppy-5.00)
@@ -329,7 +347,7 @@ case $DISTRO in
     genpatch)
 	PATCH=$2
 	cd $CURDIR
-	find . -name *.org | sed 's/\.org$//' | xargs -iF diff -c F.org F > $PATCH
+	find . -name '*.org' | sed 's/\.org$//' | xargs -iF diff -c F.org F > $PATCH
 	;;
     applypatch)
 	PATCH=$2

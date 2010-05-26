@@ -17,3 +17,6 @@ fedora/initrd-*
 centos/vmlinuz-*
 centos/initrd-*
 puppy-*
+opensuse/linux-*
+opensuse/initrd-*
+
