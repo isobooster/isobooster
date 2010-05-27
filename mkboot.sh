@@ -160,13 +160,17 @@ addboot()
 
 genmenu()
 {
+    local aftermenu
     # generate menu file
     cat cfg/head.cfg > $MENUFILE
     sort $BOOTFILE | while read line; do
 	if [ -f cfg/${line}.cfg ]; then
+	    aftermenu=0
 	    cat cfg/${line}.cfg | while read mline; do
 		if [ ! "${mline###menu}" = "${mline}" ]; then
-		    echo "${mline}" | sed 's/^#menu\s*//' >> $MENUFILE
+		    aftermenu=1
+		elif [ $aftermenu -eq 1 ]; then
+		    echo "$mline" >> $MENUFILE
 		fi
 	    done
 	    echo "" >> $MENUFILE
@@ -217,7 +221,9 @@ loadcfg()
 {
     local CFGFILE=$1
     cat $CFGFILE | while read line; do
-	if [ "${line###}" = "$line" ]; then
+	if [ ! "${line###menu}" = "$line" ]; then
+	    break
+	else
 	    eval $line || exit 1
 	fi
     done
