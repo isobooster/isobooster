@@ -242,6 +242,7 @@ case $DISTRO in
     bootloader)
 	installsyslinux $2
 	installgrub4dos
+	mlabel -i $2 ::MULTIBOOT
 	;;
     genmenu)
 	genmenu
