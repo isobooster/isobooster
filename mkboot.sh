@@ -7,19 +7,20 @@ USBROOT=$(pwd)
 WORKROOT=/tmp
 MENUFILE=menu.lst
 BOOTFILE=boot.lst
+ISOMOUNTDIR=/mnt/iso
 
 prepareiso()
 {
     local ISO=$1
     local BASEURL=$2
 
-    if [ ! -r iso/$ISO ]; then
+    if [ ! -r iso/$ISO -o ! -s iso/$ISO ]; then
 	if [ -n "$BASEURL" ]; then
-	    mkdir -pv iso || exit 1
-	    wget ${BASEURL}/$ISO -O iso/$ISO || exit 1
+	    mkdir -pv iso || return 1
+	    wget ${BASEURL}/$ISO -O iso/$ISO || return 1
 	else
 	    echo "$ISO is not exist."
-	    exit 1
+	    return 1
 	fi
     fi
 }
@@ -31,16 +32,59 @@ prepareiso4pmagic()
 
     if [ ! -r iso/$ISO ]; then
 	if [ -n "$BASEURL" ]; then
-	    mkdir -pv iso || exit 1
-	    wget ${BASEURL}/${ISO}.zip -O iso/${ISO}.zip || exit 1
+	    mkdir -pv iso || return 1
+	    wget ${BASEURL}/${ISO}.zip -O iso/${ISO}.zip || return 1
 	    pushd iso
-	    unzip -v ${ISO}.zip || exit 1
+	    unzip -v ${ISO}.zip || return 1
 	    rm -v ${ISO}.zip
 	    popd
 	else
 	    echo "$ISO is not exist."
-	    exit 1
+	    return 1
 	fi
+    fi
+}
+
+mountiso()
+{
+    local ISO=$1
+    if [ -d $ISOMOUNTDIR ]; then
+	umountiso || return 1
+    fi
+    mkdir -pv $ISOMOUNTDIR || return 1
+    mount -v -o loop -t iso9660 iso/$ISO $ISOMOUNTDIR || return 1
+}
+
+umountiso()
+{
+    umount -v $ISOMOUNTDIR || return 1
+    rmdir -v $ISOMOUNTDIR || return 1
+}
+
+copyfromiso()
+{
+    local FROM=$1
+    local DST=$2
+    local ISO=$3
+    if [ -z "$ISO" -a -n "$ISOFILE" ]; then
+	ISO=$ISOFILE
+    fi
+
+    if [ ! -d $ISOMOUNTDIR ]; then
+	mountiso $ISO || return 1
+    fi
+
+    if [ ! -d $(dirname $DST) ]; then
+	mkdir -pv $(dirname $DST) || return 1
+    fi
+
+    if [ -f $ISOMOUNTDIR/$FROM ]; then
+	cp -v $ISOMOUNTDIR/$FROM $DST || return 1
+    elif [ -f $ISOMOUNTDIR$FROM ]; then
+	cp -v $ISOMOUNTDIR$FROM $DST || return 1
+    else
+	echo "Fail to copy ${FROM}."
+	return 1
     fi
 }
 
@@ -58,69 +102,17 @@ geninitrd()
     zcat $USBROOT/$DST/$SOURCE | cpio -i -H newc --no-absolute-filenames
     if [ ! -f init ]; then
 	echo "Fail to extract initrd."
-	exit 1
+	return 1
     fi
-    patch -p0 < $USBROOT/$PATCH || exit 1
+    patch -p0 < $USBROOT/$PATCH || return 1
     echo "Creating patched initrd"
     find . | cpio -o -H newc | gzip - > $USBROOT/$DST/initrd-mod-${VER}.gz
     popd
     if [ ! -s $DST/initrd-mod-${VER}.gz ]; then
 	echo "Fail to generate initrd."
-	exit 1
+	return 1
     fi
     rm -rf $WORK
-}
-
-geninitrd_centos()
-{
-    # for CentOS and Fedora
-    local ISO=$3
-    local DST=$1
-    local PATCH=$4
-    local VER=$2
-
-    mkdir -pv /mnt/iso $DST || exit 1
-    mount -v -o loop -t iso9660 iso/$ISO /mnt/iso || exit 1
-    cp -v /mnt/iso/isolinux/vmlinuz0 $DST/vmlinuz-$VER
-    cp -v /mnt/iso/isolinux/initrd0.img $DST/initrd-${VER}.img
-    umount -v /mnt/iso
-    rmdir -v /mnt/iso
-    # apply patch
-    geninitrd $DST $VER initrd-${VER}.img $PATCH
-}
-
-geninitrd_knoppix()
-{
-    local ISO=$2
-    local DST=knoppix
-    local PATCH=$3
-    local VER=$1
-
-    mkdir -pv /mnt/iso $DST || exit 1
-    mount -v -o loop -t iso9660 iso/$ISO /mnt/iso || exit 1
-    cp -v /mnt/iso/boot/isolinux/linux $DST/linux-$VER
-    cp -v /mnt/iso/boot/isolinux/minirt.gz $DST/minirt-${VER}.gz
-    umount -v /mnt/iso
-    rmdir -v /mnt/iso
-    # apply patch
-    geninitrd $DST $VER minirt-${VER}.gz $PATCH
-}
-
-geninitrd_opensuse()
-{
-    local ISO=$2
-    local DST=opensuse
-    local PATCH=$3
-    local VER=$1
-
-    mkdir -pv /mnt/iso $DST || exit 1
-    mount -v -o loop -t iso9660 iso/$ISO /mnt/iso || exit 1
-    cp -v /mnt/iso/boot/i386/loader/linux $DST/linux-$VER
-    cp -v /mnt/iso/boot/i386/loader/initrd $DST/initrd-${VER}
-    umount -v /mnt/iso
-    rmdir -v /mnt/iso
-    # apply patch
-    geninitrd $DST $VER initrd-${VER} $PATCH
 }
 
 copyiso()
@@ -132,8 +124,8 @@ copyiso()
 	# clean previous folder first
 	rm -rv $DST
     fi
-    mkdir -pv /mnt/iso $DST || exit 1
-    mount -v -o loop iso/$ISO /mnt/iso || exit 1
+    mkdir -pv /mnt/iso $DST || return 1
+    mount -v -o loop iso/$ISO /mnt/iso || return 1
     cp -rv /mnt/iso/* $DST
     umount -v /mnt/iso
     rmdir -v /mnt/iso
@@ -144,10 +136,10 @@ addboot()
     local BOOT=$1
     if [ ! -f cfg/${BOOT}.cfg ]; then
 	echo "Configuration file is not found for ${BOOT}."
-	exit 1
+	return 1
     fi
     if [ ! -f $BOOTFILE ]; then
-	touch $BOOTFILE || exit 1
+	touch $BOOTFILE || return 1
     fi
     if [ -z $(grep "$BOOT" $BOOTFILE) ]; then
 	echo "$BOOT" >> $BOOTFILE
@@ -187,14 +179,14 @@ installsyslinux()
     local USBDEV=$1
     if [ -z $USBDEV ]; then
 	echo "Please specify USB device partition."
-	exit 1
+	return 1
     fi
     if [ -z $(which syslinux) ]; then
 	echo "Please install syslinux and try again."
-	exit 1
+	return 1
     fi
 
-    syslinux $USBDEV || exit 1
+    syslinux $USBDEV || return 1
     echo "Syslinux was installed."
 }
 
@@ -206,8 +198,8 @@ installgrub4dos()
     local GRUBFILE=grub.exe
 
     if [ ! -f $GRUBFILE ]; then
-	wget $BASEURL/$ZIPFILE -O $ZIPFILE || exit 1
-	unzip -o $ZIPFILE grub4dos-${VER}/$GRUBFILE || exit 1
+	wget $BASEURL/$ZIPFILE -O $ZIPFILE || return 1
+	unzip -o $ZIPFILE grub4dos-${VER}/$GRUBFILE || return 1
 	mv -v grub4dos-${VER}/$GRUBFILE .
 	rm -rv grub4dos-${VER}
 	rm -v $ZIPFILE
@@ -224,9 +216,10 @@ loadcfg()
 	if [ ! "${line###menu}" = "$line" ]; then
 	    break
 	else
-	    eval $line || exit 1
+	    eval $line || return 1
 	fi
     done
+    return $ret
 }
 
 if [ -z "$1" ]; then
@@ -250,9 +243,9 @@ case $DISTRO in
 	if [ -z $(grep "mtools_skip_check" ~/.mtoolsrc) ]; then	
 	    echo "mtools_skip_check=1" >> ~/.mtoolsrc
 	fi
-	mlabel -i $2 -c ::MULTIBOOT
+	mlabel -i $2 -c ::MULTIBOOT || exit 1
 	mlabel -i $2 -s ::
-	installsyslinux $2
+	installsyslinux $2 || exit 1
 	installgrub4dos
 	;;
     genmenu)
@@ -285,7 +278,17 @@ case $DISTRO in
     *)
 	CFGFILE=cfg/${DISTRO}.cfg
 	if [ -f $CFGFILE ]; then
+	    if [ -d $ISOMOUNTDIR ]; then
+		umountiso || exit 1
+	    fi
 	    loadcfg $CFGFILE
+	    ret=$?
+	    if [ -d $ISOMOUNTDIR ]; then
+		umountiso || exit 1
+	    fi
+	    if [ $ret -ne 0 ]; then
+		exit $ret
+	    fi
 	    addboot $DISTRO
 	else
 	    echo "$DISTRO is not supported."
