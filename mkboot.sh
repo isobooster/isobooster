@@ -84,10 +84,9 @@ geninitrd_centos()
     cp -v /mnt/iso/isolinux/vmlinuz0 $DST/vmlinuz-$VER
     cp -v /mnt/iso/isolinux/initrd0.img $DST/initrd-${VER}.img
     umount -v /mnt/iso
-    rmdir /mnt/iso
+    rmdir -v /mnt/iso
     # apply patch
     geninitrd $DST $VER initrd-${VER}.img $PATCH
-#    rm $DST/initrd0.img
 }
 
 geninitrd_knoppix()
@@ -102,10 +101,9 @@ geninitrd_knoppix()
     cp -v /mnt/iso/boot/isolinux/linux $DST/linux-$VER
     cp -v /mnt/iso/boot/isolinux/minirt.gz $DST/minirt-${VER}.gz
     umount -v /mnt/iso
-    rmdir /mnt/iso
+    rmdir -v /mnt/iso
     # apply patch
     geninitrd $DST $VER minirt-${VER}.gz $PATCH
-#    rm $DST/minirt.gz
 }
 
 geninitrd_opensuse()
@@ -120,10 +118,9 @@ geninitrd_opensuse()
     cp -v /mnt/iso/boot/i386/loader/linux $DST/linux-$VER
     cp -v /mnt/iso/boot/i386/loader/initrd $DST/initrd-${VER}
     umount -v /mnt/iso
-    rmdir /mnt/iso
+    rmdir -v /mnt/iso
     # apply patch
     geninitrd $DST $VER initrd-${VER} $PATCH
-#    rm $DST/minirt.gz
 }
 
 copyiso()
@@ -139,7 +136,7 @@ copyiso()
     mount -v -o loop iso/$ISO /mnt/iso || exit 1
     cp -rv /mnt/iso/* $DST
     umount -v /mnt/iso
-    rmdir /mnt/iso
+    rmdir -v /mnt/iso
 }
 
 addboot()
@@ -240,9 +237,17 @@ DISTRO=$1
 
 case $DISTRO in
     bootloader)
+	if [ -z $(which mlabel) ]; then
+	    echo "Please install mtools and try again."
+	    exit 1
+	fi
+	if [ -z $(grep "mtools_skip_check" ~/.mtoolsrc) ]; then	
+	    echo "mtools_skip_check=1" >> ~/.mtoolsrc
+	fi
+	mlabel -i $2 -c ::MULTIBOOT
+	mlabel -i $2 -s ::
 	installsyslinux $2
 	installgrub4dos
-	mlabel -i $2 ::MULTIBOOT
 	;;
     genmenu)
 	genmenu
