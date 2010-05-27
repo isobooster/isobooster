@@ -124,11 +124,10 @@ copyiso()
 	# clean previous folder first
 	rm -rv $DST
     fi
-    mkdir -pv /mnt/iso $DST || return 1
-    mount -v -o loop iso/$ISO /mnt/iso || return 1
-    cp -rv /mnt/iso/* $DST
-    umount -v /mnt/iso
-    rmdir -v /mnt/iso
+    mkdir -pv $DST || return 1
+    mountiso $ISO || return 1
+    cp -rv ${ISOMOUNTDIR}/* $DST
+    umountiso
 }
 
 addboot()
