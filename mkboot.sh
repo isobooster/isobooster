@@ -24,6 +24,26 @@ prepareiso()
     fi
 }
 
+prepareiso4pmagic()
+{
+    local ISO=$1
+    local BASEURL=$2
+
+    if [ ! -r iso/$ISO ]; then
+	if [ -n "$BASEURL" ]; then
+	    mkdir -pv iso || exit 1
+	    wget ${BASEURL}/${ISO}.zip -O iso/${ISO}.zip || exit 1
+	    pushd iso
+	    unzip -v ${ISO}.zip || exit 1
+	    rm -v ${ISO}.zip
+	    popd
+	else
+	    echo "$ISO is not exist."
+	    exit 1
+	fi
+    fi
+}
+
 geninitrd()
 {
     local DST=$1
@@ -147,7 +167,11 @@ genmenu()
     cat cfg/head.cfg > $MENUFILE
     sort $BOOTFILE | while read line; do
 	if [ -f cfg/${line}.cfg ]; then
-	    cat cfg/${line}.cfg >> $MENUFILE
+	    cat cfg/${line}.cfg | while read mline; do
+		if [ ! "${mline###menu}" = "${mline}" ]; then
+		    echo "${mline}" | sed 's/^#menu\s*//' >> $MENUFILE
+		fi
+	    done
 	    echo "" >> $MENUFILE
 	else
 	    echo "[warn] ignore ${line}"
@@ -192,6 +216,16 @@ installgrub4dos()
     fi
 }
 
+loadcfg()
+{
+    local CFGFILE=$1
+    cat $CFGFILE | while read line; do
+	if [ "${line###}" = "$line" ]; then
+	    eval $line || exit 1
+	fi
+    done
+}
+
 if [ -z "$1" ]; then
     echo "Please specify distro name."
     exit 1
@@ -223,125 +257,6 @@ case $DISTRO in
 	mkfs.ext3 -j -F casper-rw || exit 1
 	echo "casper-rw was created."
 	;;
-    ubuntu-8.04)
-	ISOFILE=ubuntu-8.04.4-desktop-i386.iso
-	BASEURL=http://releases.ubuntu.com/8.04.4
-	prepareiso $ISOFILE $BASEURL
-	addboot ubuntu-8.04.4
-	;;
-    ubuntu-9.04)
-	ISOFILE=ubuntu-9.04-desktop-i386.iso
-	BASEURL=http://releases.ubuntu.com/9.04
-	prepareiso $ISOFILE $BASEURL
-	addboot ubuntu-9.04
-	;;
-    ubuntu-9.10)
-	ISOFILE=ubuntu-9.10-desktop-i386.iso
-	BASEURL=http://releases.ubuntu.com/9.10
-	prepareiso $ISOFILE $BASEURL
-	addboot ubuntu-9.10
-	;;
-    ubuntu-10.04)
-	ISOFILE=ubuntu-10.04-desktop-i386.iso
-	BASEURL=http://releases.ubuntu.com/10.04
-	prepareiso $ISOFILE $BASEURL
-	addboot ubuntu-10.04
-	;;
-    mint-9)
-	ISOFILE=linuxmint-9-gnome-cd-i386.iso
-	BASEURL=http://mirror.amarillolinux.com/linuxmint/stable/9
-	prepareiso $ISOFILE $BASEURL
-	addboot mint-9
-	;;
-    dsl|dsl-4.4.10)
-	ISOFILE=dsl-4.4.10-initrd.iso
-	BASEURL=http://distro.ibiblio.org/pub/linux/distributions/damnsmall/current
-	prepareiso $ISOFILE $BASEURL
-	addboot dsl-4.4.10
-	;;
-    netbootcd|netbootcd-3.2.1)
-	ISOFILE=NetbootCD-3.2.1.iso
-	BASEURL=http://downloads.tuxfamily.org/netbootcd/3.2.1
-	prepareiso $ISOFILE $BASEURL
-	addboot netbootcd-3.2.1
-	;;
-    fedora-12)
-	ISOFILE=Fedora-12-i686-Live.iso
-	BASEURL=http://download.fedoraproject.org/pub/fedora/linux/releases/12/Live/i686
-	prepareiso $ISOFILE $BASEURL
-	geninitrd_centos fedora 12 $ISOFILE fedora/fedora-12.patch
-	addboot fedora-12
-	;;
-    fedora-13)
-	ISOFILE=Fedora-13-i686-Live.iso
-	BASEURL=http://download.fedoraproject.org/pub/fedora/linux/releases/13/Live/i686
-	prepareiso $ISOFILE $BASEURL
-	geninitrd_centos fedora 13 $ISOFILE fedora/fedora-12.patch
-	addboot fedora-13
-	;;
-    soas2)
-	ISOFILE=soas-2-blueberry.iso
-	BASEURL=http://download.sugarlabs.org/soas/releases
-	prepareiso $ISOFILE $BASEURL
-	geninitrd_centos fedora soas2 $ISOFILE fedora/fedora-12.patch
-	addboot soas2
-	;;
-    knoppix-jp|knoppix-6.0.1-jp)
-	# japanese version
-	ISOFILE=knoppix_v6.0.1CD_20090208-20090225_opt.iso
-	BASEURL=http://ring.aist.go.jp/pub/linux/knoppix/iso
-	prepareiso $ISOFILE $BASEURL
-	geninitrd_knoppix 6.0.1-jp $ISOFILE knoppix/knoppix-6.0.1-jp.patch
-	addboot knoppix-6.0.1-jp
-	;;
-    knoppix-6.2.1)
-	ISOFILE=KNOPPIX_V6.2.1CD-2010-01-31-EN.iso 
-	BASEURL=http://ftp.knoppix.nl/os/Linux/distr/knoppix
-	prepareiso $ISOFILE $BASEURL
-	geninitrd_knoppix 6.2.1 $ISOFILE knoppix/knoppix-6.0.1-jp.patch
-	addboot knoppix-6.2.1
-	;;
-    rescue|rescue-1.5.4)
-	ISOFILE=systemrescuecd-x86-1.5.4.iso
-	BASEURL=http://downloads.sourceforge.net/project/systemrescuecd/sysresccd-x86/1.5.4
-	prepareiso $ISOFILE $BASEURL
-	copyiso rescue-1.5.4 $ISOFILE
-	addboot systemrescuecd-1.5.4
-	;;
-    centos-5|centos-5.5)
-	ISOFILE=CentOS-5.5-i386-LiveCD.iso
-	BASEURL=http://ftp.osuosl.org/pub/centos/5.5/isos/i386
-	prepareiso $ISOFILE $BASEURL
-	geninitrd_centos centos 5.5 $ISOFILE centos/centos-5.5.patch
-	addboot centos-5.5
-	;;
-    opensuse-11|opensuse-11.2)
-	ISOFILE=openSUSE-11.2-GNOME-LiveCD-i686.iso
-	BASEURL=http://download.opensuse.org/distribution/11.2/iso
-	prepareiso $ISOFILE $BASEURL
-	geninitrd_opensuse 11.2 $ISOFILE opensuse/opensuse-11.2.patch
-	addboot opensuse-11.2
-	;;
-    puppy-5|puppy-5.00)
-	ISOFILE=lupu-500.iso
-	BASEURL=http://distro.ibiblio.org/pub/linux/distributions/puppylinux/puppy-5.0
-	prepareiso $ISOFILE $BASEURL
-	copyiso puppy-5.00 $ISOFILE
-	addboot puppy-5.00
-	;;
-    pmagic-4.10)
-	ISOFILE=pmagic-4.10.iso
-	BASEURL=http://downloads.sourceforge.net/project/partedmagic/partedmagic/Parted%20Magic%204.10
-	if [ ! -f iso/$ISOFILE ]; then
-	    wget $BASEURL/${ISOFILE}.zip -O iso/${ISOFILE}.zip || exit 1
-	    pushd iso
-	    unzip -v ${ISOFILE}.zip || exit 1
-	    rm -v ${ISOFILE}.zip
-	    popd
-	fi
-#	prepareiso $ISOFILE $BASEURL
-	addboot pmagic-4.10
-	;;
 
     # for development
     genpatch)
@@ -356,6 +271,12 @@ case $DISTRO in
 	;;
 
     *)
-	echo "$DISTRO is not supported."
+	CFGFILE=cfg/${DISTRO}.cfg
+	if [ -f $CFGFILE ]; then
+	    loadcfg $CFGFILE
+	    addboot $DISTRO
+	else
+	    echo "$DISTRO is not supported."
+	fi
 	;;
 esac

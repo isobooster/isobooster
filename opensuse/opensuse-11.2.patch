@@ -1,46 +1,143 @@
 *** ./init.org	2010-05-26 10:39:28.618377576 -0700
---- ./init	2010-05-26 12:16:11.408357817 -0700
+--- ./init	2010-05-26 16:51:33.388340683 -0700
 ***************
 *** 61,66 ****
 --- 61,69 ----
   if grep -i -q "livecd_config=[a-zA-Z0-9/]" /proc/cmdline; then
   	export LIVECD_CONFIG=`sed 's/.*livecd_config=\([^ ]*\).*/\1/' /proc/cmdline`
   fi
-+ if grep -i -q "isofile=[^ ]*" /proc/cmdline; then
++ if grep -i -q "isofile=[a-zA-Z0-9/]" /proc/cmdline; then
 +     export ISOFILE=$(sed 's/.*isofile=\([^ ]*\).*/\1/' /proc/cmdline)
 + fi
   
   #======================================
   # 3) Prepare module load support 
+***************
+*** 266,272 ****
+  		systemException "Failed to mount RW root filesystem" "reboot"
+  	fi
+  	cdopt=$(CDMountOption $cddev)
+! 	mkdir -p $LIVECD && eval mount $cdopt $cddev $LIVECD
+  	#======================================
+  	# 12.2) Create RO Link list
+  	#--------------------------------------
+--- 269,282 ----
+  		systemException "Failed to mount RW root filesystem" "reboot"
+  	fi
+  	cdopt=$(CDMountOption $cddev)
+! 	mkdir -p $LIVECD
+! 	if [ -n "$ISOFILE" ]; then
+! 	    mkdir -p /liveiso
+! 	    mount -t auto -o ro $cddev /liveiso
+! 	    mount -t iso9660 -o loop,ro /liveiso/$ISOFILE $LIVECD
+! 	else
+! 	    eval mount $cdopt $cddev $LIVECD
+! 	fi
+  	#======================================
+  	# 12.2) Create RO Link list
+  	#--------------------------------------
+***************
+*** 303,309 ****
+  		Echo "Mounting compressed unified tree..."
+  	fi
+  	cdopt=$(CDMountOption $cddev)
+! 	mkdir -p $LIVECD && eval mount $cdopt $cddev $LIVECD
+  	if ! mountSystem /dev/loop1 $LIVECD/$imageReadOnly;then
+  		systemException "Failed to mount root filesystem" "reboot"
+  	fi
+--- 313,326 ----
+  		Echo "Mounting compressed unified tree..."
+  	fi
+  	cdopt=$(CDMountOption $cddev)
+! 	mkdir -p $LIVECD
+! 	if [ -n "$ISOFILE" ]; then
+! 	    mkdir -p /liveiso
+! 	    mount -t auto -o ro $cddev /liveiso
+! 	    mount -t iso9660 -o loop,ro /liveiso/$ISOFILE $LIVECD
+! 	else
+! 	    eval mount $cdopt $cddev $LIVECD
+! 	fi
+  	if ! mountSystem /dev/loop1 $LIVECD/$imageReadOnly;then
+  		systemException "Failed to mount root filesystem" "reboot"
+  	fi
 *** ./include.org	2010-05-26 11:08:03.408341783 -0700
---- ./include	2010-05-26 11:19:59.348394729 -0700
+--- ./include	2010-05-26 16:55:22.748340892 -0700
+***************
+*** 1979,1993 ****
+  		count=`expr $count + 1`
+  	done
+  	echo
+! 	if [ -z "$cddev" ];then
+  		USBStickDevice
+! 		if [ $stickFound = 0 ];then
+! 			systemException \
+! 				"Failed to detect CD/DVD or USB drive !" \
+! 			"reboot"
+  		fi
+! 		cddev=$stickDevice
+! 	fi
+  }
+  #======================================
+  # USBStickDevice
+--- 1979,1993 ----
+  		count=`expr $count + 1`
+  	done
+  	echo
+! #	if [ -z "$cddev" -o -n "$ISOFILE" ];then
+  		USBStickDevice
+! 		if [ $stickFound -eq 1 ];then
+! #			systemException \
+! #				"Failed to detect CD/DVD or USB drive !" \
+! #			"reboot"
+! 		    test -z $cddev && cddev=$stickDevice || cddev=$cddev:$stickDevice
+  		fi
+! #	fi
+  }
+  #======================================
+  # USBStickDevice
+***************
+*** 2063,2069 ****
+  						# USB stick search for Linux system tree
+  						# created with kiwi
+  						# ----
+! 						if [ ! -e /mnt/etc/ImageVersion ]; then
+  							umountSystem
+  							continue
+  						fi
+--- 2063,2069 ----
+  						# USB stick search for Linux system tree
+  						# created with kiwi
+  						# ----
+! 						if [ ! -e /mnt/etc/ImageVersion ] && [ -z "$ISOFILE" -o ! -e /mnt/$ISOFILE ]; then
+  							umountSystem
+  							continue
+  						fi
 ***************
 *** 2159,2164 ****
---- 2159,2171 ----
+--- 2159,2172 ----
   					#--------------------------------------
   					IFS=$IFS_ORIG
   					return
 + 				elif [ -n "$ISOFILE" -a -f /cdrom/$ISOFILE ]; then
-+ 				    echo "Mounting ISO image.."
 + 				    umount $i > /dev/null
 + 				    mkdir -p /liveiso
-+ 				    mount -v $cdopt -o ro $i /liveiso
++ 				    mount -v -t auto -o ro $i /liveiso
 + 				    mount -v -t iso9660 -o loop,ro /liveiso/$ISOFILE /cdrom
++ 				    cddev=$i
++ 				    IFS=$IFS_ORIG
 + 				    return
   				fi
   				umount $i &>/dev/null
   			done
-*** ./linuxrc.org	2010-05-26 12:20:10.438374727 -0700
---- ./linuxrc	2010-05-26 12:20:47.508349174 -0700
 ***************
-*** 61,66 ****
---- 61,69 ----
-  if grep -i -q "livecd_config=[a-zA-Z0-9/]" /proc/cmdline; then
-  	export LIVECD_CONFIG=`sed 's/.*livecd_config=\([^ ]*\).*/\1/' /proc/cmdline`
-  fi
-+ if grep -i -q "isofile=[^ ]*" /proc/cmdline; then
-+     export ISOFILE=$(sed 's/.*isofile=\([^ ]*\).*/\1/' /proc/cmdline)
-+ fi
-  
+*** 2218,2223 ****
+--- 2226,2234 ----
+  	# /.../
+  	# umount the CD device
+  	# ----
++     if [ -n "$ISOFILE" ]; then
++ 	umount /cdrom
++     fi
+  	umount $cddev
+  }
   #======================================
-  # 3) Prepare module load support 
