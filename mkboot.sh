@@ -11,13 +11,19 @@ ISOMOUNTDIR=/mnt/iso
 
 prepareiso()
 {
-    local ISO=$1
-    local BASEURL=$2
+    local ISO="${1}"
+    local BASEURL="${2}"
+    local URL
 
     if [ ! -r iso/$ISO -o ! -s iso/$ISO ]; then
 	if [ -n "$BASEURL" ]; then
 	    mkdir -pv iso || return 1
-	    wget ${BASEURL}/$ISO -O iso/$ISO || return 1
+	    if [ "${BASEURL%%.iso}" = "${BASEURL}" ]; then
+		URL=${BASEURL}/$ISO
+	    else
+		URL=${BASEURL}
+	    fi
+	    wget ${URL} -O iso/$ISO || return 1
 	else
 	    echo "$ISO is not exist."
 	    return 1
