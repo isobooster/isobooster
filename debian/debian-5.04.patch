@@ -1,0 +1,94 @@
+*** ./scripts/live.org	2010-05-27 15:56:56.238036022 -0700
+--- ./scripts/live	2010-05-27 17:21:33.157665370 -0700
+***************
+*** 471,476 ****
+--- 471,480 ----
+  				XVIDEOMODE="${ARGUMENT#xvideomode=}"
+  				export XVIDEOMODE
+  				;;
++ 				iso-scan/filename=*)
++ 				ISOFILE="${ARGUMENT#iso-scan/filename=}"
++ 				export ISOFILE
++ 				;;
+  		esac
+  	done
+  
+***************
+*** 504,509 ****
+--- 508,514 ----
+  is_live_path ()
+  {
+  	DIRECTORY="${1}"
++ 	DEVNAME="${2}"
+  
+  	if [ -d "${DIRECTORY}"/"${LIVE_MEDIA_PATH}" ]
+  	then
+***************
+*** 514,519 ****
+--- 519,531 ----
+  				return 0
+  			fi
+  		done
++ 	elif [ -n "$ISOFILE" -a -f "${DIRECTORY}/$ISOFILE" ]; then
++ 	    # remount ISO
++ 	    umount "$DEVNAME" > /dev/null
++ 	    mkdir -p /isodevice
++ 	    mount -t auto "$DEVNAME" /isodevice > /dev/null
++ 	    mount -o loop -t iso9660 /isodevice/$ISOFILE $DIRECTORY > /dev/null
++ 	    return 0
+  	fi
+  
+  	return 1
+***************
+*** 1348,1354 ****
+  	then
+  		mount -o bind "${devname}" $mountpoint || continue
+  
+! 		if is_live_path $mountpoint
+  		then
+  			echo $mountpoint
+  			return 0
+--- 1360,1366 ----
+  	then
+  		mount -o bind "${devname}" $mountpoint || continue
+  
+! 		if is_live_path $mountpoint "${devname}"
+  		then
+  			echo $mountpoint
+  			return 0
+***************
+*** 1369,1375 ****
+  	then
+  		mount -t ${fstype} -o ro,noatime "${devname}" ${mountpoint} || continue
+  
+! 		if is_live_path ${mountpoint} && \
+  			([ "${skip_uuid_check}" ] || matches_uuid ${mountpoint})
+  		then
+  			echo ${mountpoint}
+--- 1381,1387 ----
+  	then
+  		mount -t ${fstype} -o ro,noatime "${devname}" ${mountpoint} || continue
+  
+! 		if is_live_path ${mountpoint} "${devname}" && \
+  			([ "${skip_uuid_check}" ] || matches_uuid ${mountpoint})
+  		then
+  			echo ${mountpoint}
+***************
+*** 1571,1578 ****
+  			i=0
+  			while [ "$i" -lt 60 ]
+  			do
+! 				livefs_root=$(find_livefs ${i})
+! 
+  				if [ -n "${livefs_root}" ]
+  				then
+  					break
+--- 1583,1590 ----
+  			i=0
+  			while [ "$i" -lt 60 ]
+  			do
+! 			    #livefs_root=$(find_livefs ${i})
+! 			    find_livefs ${i} && livefs_root=$mountpoint
+  				if [ -n "${livefs_root}" ]
+  				then
+  					break

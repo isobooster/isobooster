@@ -21,4 +21,6 @@ opensuse/linux-*
 opensuse/initrd-*
 slax*
 ubuntu
+debian/vmlinuz-*
+debian/initrd-*
 
