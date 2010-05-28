@@ -106,11 +106,14 @@ geninitrd()
     fi
     patch -p0 < $USBROOT/$PATCH || return 1
     echo "Creating patched initrd"
-    find . | cpio -o -H newc | gzip - > $USBROOT/$DST/initrd-mod-${VER}.gz
+    INITRDMOD=$DST/initrd-mod-${VER}.gz
+    find . | cpio -o -H newc | gzip - > $USBROOT/$INITRDMOD
     popd
-    if [ ! -s $DST/initrd-mod-${VER}.gz ]; then
+    if [ ! -s $INITRDMOD ]; then
 	echo "Fail to generate initrd."
 	return 1
+    else
+	echo "$INITRDMOD was generated."
     fi
     rm -rf $WORK
 }
