@@ -23,4 +23,8 @@ slax*
 ubuntu
 debian/vmlinuz-*
 debian/initrd-*
+mandriva/vmlinuz-*
+mandriva/initrd-*
+pclinuxos
+nimblex
 

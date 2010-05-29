@@ -96,32 +96,62 @@ copyfromiso()
 
 geninitrd()
 {
-    local DST=$1
-    local VER=$2
-    local PATCH=$4
-    local SOURCE=$3
-    local WORK=$WORKROOT/cpio-work
+    local DST=$2
+    local PATCH=$3
+    local SOURCE=$1
+    local WORK=$WORKROOT/initrd-work
 
     rm -rf $WORK
     mkdir -pv $WORK
     pushd $WORK
-    zcat $USBROOT/$DST/$SOURCE | cpio -i -H newc --no-absolute-filenames
+    zcat $USBROOT/$SOURCE | cpio -i -H newc --no-absolute-filenames
     if [ ! -f init ]; then
 	echo "Fail to extract initrd."
 	return 1
     fi
     patch -p0 < $USBROOT/$PATCH || return 1
     echo "Creating patched initrd"
-    INITRDMOD=$DST/initrd-mod-${VER}.gz
-    find . | cpio -o -H newc | gzip - > $USBROOT/$INITRDMOD
+    find . | cpio -o -H newc | gzip - > $USBROOT/$DST
     popd
-    if [ ! -s $INITRDMOD ]; then
+    if [ ! -s $DST ]; then
 	echo "Fail to generate initrd."
 	return 1
     else
 	echo "$INITRDMOD was generated."
     fi
     rm -rf $WORK
+}
+
+geninitrd_mount()
+{
+    local DST=$2
+    local PATCH=$3
+    local SOURCE=$1
+    local SOURCEFILE=$(basename $SOURCE)
+    local WORK=$WORKROOT/initrd-work
+    local INITRD_MOUNT=/mnt/initrd
+
+    rm -rf $WORK
+    mkdir -pv $WORK $INITRD_MOUNT || return 1
+    cp -v $USBROOT/$SOURCE $WORK || return 1
+    if [ ! "${SOURCEFILE%%.gz}" = "$SOURCEFILE" ]; then
+	gunzip $WORK/$SOURCEFILE || return 1
+	SOURCEFILE="${SOURCEFILE%%.gz}"
+    fi
+    mount -o loop $WORK/$SOURCEFILE $INITRD_MOUNT || return 1
+    pushd $INITRD_MOUNT
+    patch -p0 < $USBROOT/$PATCH || return 1
+    popd
+    umount $INITRD_MOUNT || return 1
+    echo "Creating patched initrd"
+    gzip -c $WORK/$SOURCEFILE > $USBROOT/$DST || return 1
+    if [ ! -s $DST ]; then
+	echo "Fail to generate initrd."
+	return 1
+    else
+	echo "$DST was generated."
+    fi
+    rm -rf $WORK $INITRD_MOUNT
 }
 
 copyiso()
@@ -152,10 +182,10 @@ addboot()
     if [ -z $(grep "$BOOT" $BOOTFILE) ]; then
 	echo "$BOOT" >> $BOOTFILE
 	echo "$BOOT was added to boot list."
-	genmenu
     else
 	echo "$BOOT is already installed."
     fi
+    genmenu
 }
 
 genmenu()
