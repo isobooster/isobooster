@@ -63,7 +63,7 @@ mountiso()
 
 umountiso()
 {
-    umount -v $ISOMOUNTDIR || return 1
+    umount -v $ISOMOUNTDIR || true
     rmdir -v $ISOMOUNTDIR || return 1
 }
 
@@ -109,7 +109,7 @@ geninitrd()
 	echo "Fail to extract initrd."
 	return 1
     fi
-    patch -p0 < $USBROOT/$PATCH || return 1
+    patch -p0 -i $USBROOT/$PATCH || return 1
     echo "Creating patched initrd"
     find . | cpio -o -H newc | gzip - > $USBROOT/$DST
     popd
@@ -140,7 +140,7 @@ geninitrd_mount()
     fi
     mount -o loop $WORK/$SOURCEFILE $INITRD_MOUNT || return 1
     pushd $INITRD_MOUNT
-    patch -p0 < $USBROOT/$PATCH || return 1
+    patch -p0 -i $USBROOT/$PATCH || return 1
     popd
     umount $INITRD_MOUNT || return 1
     echo "Creating patched initrd"

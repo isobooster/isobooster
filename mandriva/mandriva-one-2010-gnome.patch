@@ -1,5 +1,5 @@
 *** ./linuxrc.org	2010-05-28 16:41:47.000000000 -0700
---- ./linuxrc	2010-05-28 17:44:32.000000000 -0700
+--- ./linuxrc	2010-06-01 10:44:56.000000000 -0700
 ***************
 *** 36,44 ****
   probe-modules unionfs
@@ -11,36 +11,43 @@
   /bin/losetup /dev/loop0 /live/media/loopbacks/distrib-lzma.sqfs
   nash-mount -o ro -t squashfs /dev/loop0 /live/distrib
   mount -t tmpfs -o mode=755 /live/memory /live/memory
---- 36,68 ----
+--- 36,75 ----
   probe-modules unionfs
   probe-modules --cdrom
   sh -c 'if grep -q initrd_debug /proc/cmdline; then plymouth --quit; exec sh </dev/console >/dev/console 2>/dev/console; fi'
-! ROOTLABEL="One-2010-GNOME"
+! ROOT="LABEL=One-2010-GNOME"
 ! ISOFILE=""
-! for arg in $(echo /proc/cmdline); do
+! for arg in $(cat /proc/cmdline); do
 !     case $arg in
-! 	rootlabel=*)
-! 	ROOTLABEL="${arg#rootlabel=}"
-! 	;;
-! 	iso-scan/filename=*)
-! 	ISOFILE="${arg#iso-scan/filename=}"
-! 	;;
+!     	"root=*")
+! 	    ROOT="${arg#root=}"
+! 	    ;;
+! 	"iso-scan/filename=*")
+! 	    ISOFILE="${arg#iso-scan/filename=}"
+! 	    ;;
+! 	*)
+! 	    ;;
 !     esac
 ! done
 ! 
-! for i in seq 1 5; do showlabels --removable | grep "LABEL=$ROOTLABEL"; if [ $? -eq 0 ]; then break; fi; sleep 1; done
+! for i in seq 1 5; do showlabels --removable | grep "$ROOT"; if [ $? -eq 0 ]; then break; fi; sleep 1; done
   showlabels --removable
 ! if [ -n "$ISOFILE" ]; then
 !     echo "Mounting ISO file."
 !     mkdir -p /isodevice
-!     nash-mount -o ro -t vfat LABEL=$ROOTLABEL /isodevice
-!     pause
-!     /bin/losetup /dev/loop1 /isodevice/$ISOFILE
-!     pause
+!     eval nash-mount -o ro -t vfat $ROOT /isodevice
+!     if [ ! -e "/isodevice/$ISOFILE" ]; then
+! 	echo "Fail to mount /isodevice"
+! 	exit 1
+!     fi
+!     eval /bin/losetup /dev/loop1 /isodevice/$ISOFILE
 !     nash-mount -o ro -t iso9660 /dev/loop1 /live/media
-!     pause
 ! else
-!     nash-mount -o ro -t iso9660 LABEL=$ROOTLABEL /live/media
+!     eval nash-mount -o ro -t iso9660 $ROOT /live/media
+! fi
+! if [ ! -f "/live/media/loopbacks/distrib-lzma.sqfs" ]; then
+!     echo "Fail to mount /live/media"
+!     exit 1
 ! fi
   /bin/losetup /dev/loop0 /live/media/loopbacks/distrib-lzma.sqfs
   nash-mount -o ro -t squashfs /dev/loop0 /live/distrib

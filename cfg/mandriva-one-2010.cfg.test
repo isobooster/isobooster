@@ -8,5 +8,6 @@ geninitrd_mount mandriva/initrd-2010-gnome.gz mandriva/initrd-mod-2010-gnome.gz 
 
 #menu
 title Mandriva One 2010
-kernel /mandriva/vmlinuz-2010-gnome splash=silent vga=788 rootlabel=MULTIBOOT iso-scan/filename=iso/mandriva-linux-one-2010.0-GNOME-europe-americas-cdrom-i586.iso --
+#kernel /mandriva/vmlinuz-2010-gnome splash=silent vga=788 rootlabel=MULTIBOOT iso-scan/filename=iso/mandriva-linux-one-2010.0-GNOME-europe-americas-cdrom-i586.iso --
+kernel /mandriva/vmlinuz-2010-gnome vga=788 root=LABEL=MULTIBOOT iso-scan/filename=iso/mandriva-linux-one-2010.0-GNOME-europe-americas-cdrom-i586.iso --
 initrd /mandriva/initrd-mod-2010-gnome.gz
