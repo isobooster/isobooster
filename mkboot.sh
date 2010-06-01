@@ -73,9 +73,11 @@ copyfromiso()
     local FROM=$1
     local DST=$2
     local ISO=$3
-    if [ -z "$ISO" -a -n "$ISOFILE" ]; then
-	ISO=$ISOFILE
-    fi
+
+    test -z "$ISO" -a -n "$ISOFILE" && ISO=$ISOFILE
+    # remove first /
+    test -z "${FROM%%/*}" && FROM="${FROM#/}"
+    test -z "${DST%%/*}" && DST="${DST#/}"
 
     if [ ! -d $ISOMOUNTDIR ]; then
 	mountiso $ISO || return 1
@@ -87,8 +89,6 @@ copyfromiso()
 
     if [ -f $ISOMOUNTDIR/$FROM ]; then
 	cp -v $ISOMOUNTDIR/$FROM $DST || return 1
-    elif [ -f $ISOMOUNTDIR$FROM ]; then
-	cp -v $ISOMOUNTDIR$FROM $DST || return 1
     else
 	echo "Fail to copy ${FROM}."
 	return 1
@@ -101,6 +101,11 @@ geninitrd()
     local PATCH=$3
     local SOURCE=$1
     local WORK=$WORKROOT/initrd-work
+
+    # remove first /
+    test -z "${DST%%/*}" && DST="${DST#/}"
+    test -z "${PATCH%%/*}" && PATCH="${PATCH#/}"
+    test -z "${SOURCE%%/*}" && SOURCE="${SOURCE#/}"
 
     rm -rf $WORK
     mkdir -pv $WORK
@@ -118,7 +123,7 @@ geninitrd()
 	echo "Fail to generate initrd."
 	return 1
     else
-	echo "$INITRDMOD was generated."
+	echo "$DST was generated."
     fi
     rm -rf $WORK
 }
@@ -128,9 +133,14 @@ geninitrd_mount()
     local DST=$2
     local PATCH=$3
     local SOURCE=$1
-    local SOURCEFILE=$(basename $SOURCE)
     local WORK=$WORKROOT/initrd-work
     local INITRD_MOUNT=/mnt/initrd
+
+    # remove first /
+    test -z "${DST%%/*}" && DST="${DST#/}"
+    test -z "${PATCH%%/*}" && PATCH="${PATCH#/}"
+    test -z "${SOURCE%%/*}" && SOURCE="${SOURCE#/}"
+    local SOURCEFILE=$(basename $SOURCE)
 
     rm -rf $WORK
     mkdir -pv $WORK $INITRD_MOUNT || return 1
@@ -159,6 +169,8 @@ copyiso()
 {
     local ISO=$2
     local DST=$1
+    # remove first /
+    test -z "${DST%%/*}" && DST="${DST#/}"
 
     if [ -d $DST ]; then
 	# clean previous folder first
