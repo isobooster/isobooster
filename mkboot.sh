@@ -23,7 +23,7 @@ prepareiso()
 	    else
 		URL=${BASEURL}
 	    fi
-	    wget ${URL} -O iso/${ISO}.part || return 1
+	    wget -c ${URL} -O iso/${ISO}.part || return 1
 	    mv -v iso/${ISO}.part iso/$ISO || return 1
 	else
 	    echo "$ISO is not exist."
