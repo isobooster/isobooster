@@ -201,6 +201,26 @@ addboot()
     genmenu
 }
 
+delboot()
+{
+    local BOOT=$1
+    if [ ! -f cfg/${BOOT}.cfg ]; then
+	echo "Configuration file is not found for ${BOOT}."
+	return 1
+    fi
+    if [ ! -f $BOOTFILE ]; then
+	touch $BOOTFILE || return 1
+    fi
+    if [ -z $(grep "$BOOT" $BOOTFILE) ]; then
+	echo "$BOOT is not exist."
+    else
+	grep -v "${BOOT}" $BOOTFILE > ${BOOTFILE}.new
+	mv -v ${BOOTFILE}.new $BOOTFILE
+	echo "$BOOT was deleted."
+    fi
+    genmenu
+}
+
 genmenu()
 {
     local aftermenu
@@ -208,12 +228,19 @@ genmenu()
     cat cfg/head.cfg > $MENUFILE
     sort $BOOTFILE | while read line; do
 	if [ -f cfg/${line}.cfg ]; then
-	    aftermenu=0
+	    local aftermenu=0
+	    local global=1
 	    cat cfg/${line}.cfg | while read mline; do
-		if [ ! "${mline###menu}" = "${mline}" ]; then
+		if [ -z "${mline%%#menu*}" ]; then
 		    aftermenu=1
+		    global=0
+		elif [ -z "${mline%%#install*}" -o -z "${mline%%#remove*}" ]; then
+		    aftermenu=0
+		    global=0
 		elif [ $aftermenu -eq 1 ]; then
-		    echo "$mline" >> $MENUFILE
+		    eval "echo \"$mline\"" >> $MENUFILE
+		elif [ $global -eq 1 ]; then
+		    eval $mline
 		fi
 	    done
 	    echo "" >> $MENUFILE
@@ -260,17 +287,57 @@ installgrub4dos()
     fi
 }
 
-loadcfg()
+installcfg()
 {
     local CFGFILE=$1
+    local afterinstall=1
     cat $CFGFILE | while read line; do
-	if [ ! "${line###menu}" = "$line" ]; then
-	    break
-	else
+	if [ -z "${line%%#install*}" ]; then
+	    afterinstall=1
+	elif [ -z "${line%%#menu*}" -o -z "${line%%#remove*}" ]; then
+	    afterinstall=0
+	elif [ $afterinstall -eq 1 ]; then
 	    eval $line || return 1
 	fi
     done
-    return $ret
+    return 0
+}
+
+removecfg()
+{
+    local CFGFILE=$1
+    local flag=$2
+    local afterremove=1
+    cat $CFGFILE | while read line; do
+	if [ -z "${line%%#remove*}" ]; then
+	    afterremove=1
+	elif [ -z "${line%%#menu*}" -o -z "${line%%#install*}" ]; then
+	    afterremove=0
+	elif [ $afterremove -eq 1 ]; then
+	    if [ "$flag" = "purge" -o -n "${line%%purgefile*}" ]; then
+		eval $line || return 1
+	    fi
+	fi
+    done
+    return 0
+}
+
+rmfile()
+{
+    local file=$1
+    # remove first /
+    test -z "${file%%/*}" && file="${file#/}"
+
+    rm -rv $file
+}
+
+purgefile()
+{
+    local file=$1
+    # remove first /
+    test -z "${file%%/*}" && file="${file#/}"
+
+    rm -rv $file
 }
 
 if [ -z "$1" ]; then
@@ -328,11 +395,16 @@ case $DISTRO in
 
     *)
 	CFGFILE=cfg/${DISTRO}.cfg
+	ARG=$2
 	if [ -f $CFGFILE ]; then
 	    if [ -d $ISOMOUNTDIR ]; then
 		umountiso || exit 1
 	    fi
-	    loadcfg $CFGFILE
+	    if [ "$ARG" = "remove" -o "$ARG" = "purge" ]; then
+		removecfg $CFGFILE $ARG
+	    else
+		installcfg $CFGFILE
+	    fi
 	    ret=$?
 	    if [ -d $ISOMOUNTDIR ]; then
 		umountiso || exit 1
@@ -340,7 +412,11 @@ case $DISTRO in
 	    if [ $ret -ne 0 ]; then
 		exit $ret
 	    fi
-	    addboot $DISTRO
+	    if [ "$ARG" = "remove" -o "$ARG" = "purge" ]; then
+		delboot $DISTRO
+	    else
+		addboot $DISTRO
+	    fi
 	else
 	    echo "$DISTRO is not supported."
 	fi
