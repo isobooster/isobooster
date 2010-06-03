@@ -7,6 +7,10 @@ prepareiso $ISOFILE $URL
 #remove
 purgefile /iso/$ISOFILE
 
+
+# using this configuration.
+# http://cdlinux.info/wiki/doku.php/doc/faq/bootiso
+
 #menu
 title GNU/CDlinux 0.9.6.1 (ISO emulation)
 map --mem /iso/$ISOFILE (hd32)
