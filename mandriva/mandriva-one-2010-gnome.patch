@@ -1,17 +1,19 @@
 *** ./linuxrc.org	2010-05-28 16:41:47.000000000 -0700
---- ./linuxrc	2010-06-01 10:44:56.000000000 -0700
+--- ./linuxrc	2010-06-02 16:40:59.000000000 -0700
 ***************
-*** 36,44 ****
+*** 36,46 ****
   probe-modules unionfs
   probe-modules --cdrom
   sh -c 'if grep -q initrd_debug /proc/cmdline; then plymouth --quit; exec sh </dev/console >/dev/console 2>/dev/console; fi'
 ! for i in seq 1 5; do showlabels --removable | grep LABEL=One-2010-GNOME; if [ $? -eq 0 ]; then break; fi; sleep 1; done
   showlabels --removable
 ! nash-mount -o ro -t iso9660 LABEL=One-2010-GNOME /live/media
-  /bin/losetup /dev/loop0 /live/media/loopbacks/distrib-lzma.sqfs
-  nash-mount -o ro -t squashfs /dev/loop0 /live/distrib
+! /bin/losetup /dev/loop0 /live/media/loopbacks/distrib-lzma.sqfs
+! nash-mount -o ro -t squashfs /dev/loop0 /live/distrib
   mount -t tmpfs -o mode=755 /live/memory /live/memory
---- 36,75 ----
+  sh -c 'mount -o dirs=/live/memory=rw:/live/distrib=ro -t unionfs unionfs /live/union'
+  plymouth --newroot=/live/union
+--- 36,81 ----
   probe-modules unionfs
   probe-modules --cdrom
   sh -c 'if grep -q initrd_debug /proc/cmdline; then plymouth --quit; exec sh </dev/console >/dev/console 2>/dev/console; fi'
@@ -36,12 +38,15 @@
 !     echo "Mounting ISO file."
 !     mkdir -p /isodevice
 !     eval nash-mount -o ro -t vfat $ROOT /isodevice
+!     ls -l /isodevice
+!     ls -l /isodevice/iso
 !     if [ ! -e "/isodevice/$ISOFILE" ]; then
 ! 	echo "Fail to mount /isodevice"
 ! 	exit 1
 !     fi
-!     eval /bin/losetup /dev/loop1 /isodevice/$ISOFILE
-!     nash-mount -o ro -t iso9660 /dev/loop1 /live/media
+!     LODEV=$(/bin/losetup -f)
+!     eval /bin/losetup $LODEV /isodevice/$ISOFILE
+!     nash-mount -o ro -t iso9660 $LODEV /live/media
 ! else
 !     eval nash-mount -o ro -t iso9660 $ROOT /live/media
 ! fi
@@ -49,6 +54,9 @@
 !     echo "Fail to mount /live/media"
 !     exit 1
 ! fi
-  /bin/losetup /dev/loop0 /live/media/loopbacks/distrib-lzma.sqfs
-  nash-mount -o ro -t squashfs /dev/loop0 /live/distrib
+! LODEV=$(/bin/losetup -f)
+! eval /bin/losetup $LODEV /live/media/loopbacks/distrib-lzma.sqfs
+! eval nash-mount -o ro -t squashfs $LODEV /live/distrib
   mount -t tmpfs -o mode=755 /live/memory /live/memory
+  sh -c 'mount -o dirs=/live/memory=rw:/live/distrib=ro -t unionfs unionfs /live/union'
+  plymouth --newroot=/live/union
