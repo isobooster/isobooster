@@ -192,7 +192,7 @@ addboot()
     if [ ! -f $BOOTFILE ]; then
 	touch $BOOTFILE || return 1
     fi
-    if [ -z $(grep "$BOOT" $BOOTFILE) ]; then
+    if [ -z $(grep "${BOOT}\$" $BOOTFILE) ]; then
 	echo "$BOOT" >> $BOOTFILE
 	echo "$BOOT was added to boot list."
     else
@@ -211,10 +211,10 @@ delboot()
     if [ ! -f $BOOTFILE ]; then
 	touch $BOOTFILE || return 1
     fi
-    if [ -z $(grep "$BOOT" $BOOTFILE) ]; then
+    if [ -z $(grep "${BOOT}\$" $BOOTFILE) ]; then
 	echo "$BOOT is not exist."
     else
-	grep -v "${BOOT}" $BOOTFILE > ${BOOTFILE}.new
+	grep -v "${BOOT}\$" $BOOTFILE > ${BOOTFILE}.new
 	mv -v ${BOOTFILE}.new $BOOTFILE
 	echo "$BOOT was deleted."
     fi
