@@ -27,4 +27,6 @@ mandriva/vmlinuz-*
 mandriva/initrd-*
 pclinuxos
 nimblex
+mepis/vmlinuz-*
+mepis/initrd-*
 

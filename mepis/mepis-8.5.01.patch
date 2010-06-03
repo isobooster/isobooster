@@ -1,0 +1,19 @@
+*** ./linuxrc.org	2010-06-03 12:23:32.115140548 -0700
+--- ./linuxrc	2010-06-03 12:42:32.875207348 -0700
+***************
+*** 322,328 ****
+  	*fromhd*|*fromiso*|*bootusb*|*bootusb2*|*tohd*|*fstab*|*modules-disk*|*ideraid*)
+  	# strictly perhaps
+  	# *fromhd*|*tohd*|*fstab*|*modules-disk*)
+! 		MOUNTIT_FS="iso9660 ext3 ext2 $MODULAR_FS"
+  		;;
+  esac
+  
+--- 322,328 ----
+  	*fromhd*|*fromiso*|*bootusb*|*bootusb2*|*tohd*|*fstab*|*modules-disk*|*ideraid*)
+  	# strictly perhaps
+  	# *fromhd*|*tohd*|*fstab*|*modules-disk*)
+! 		MOUNTIT_FS="iso9660 ext3 ext2 vfat $MODULAR_FS"
+  		;;
+  esac
+  
