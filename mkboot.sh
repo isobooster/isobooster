@@ -11,8 +11,8 @@ ISOMOUNTDIR=/mnt/iso
 
 prepareiso()
 {
-    local ISO="${1}"
-    local BASEURL="${2}"
+    local ISO=$1
+    local BASEURL=$2
     local URL
 
     if [ ! -r iso/$ISO -o ! -s iso/$ISO ]; then
@@ -328,7 +328,7 @@ rmfile()
     # remove first /
     test -z "${file%%/*}" && file="${file#/}"
 
-    rm -rv $file
+    rm -rfv $file
 }
 
 purgefile()
@@ -337,7 +337,7 @@ purgefile()
     # remove first /
     test -z "${file%%/*}" && file="${file#/}"
 
-    rm -rv $file
+    rm -rfv $file
 }
 
 if [ -z "$1" ]; then
