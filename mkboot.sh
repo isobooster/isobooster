@@ -264,6 +264,7 @@ genmenu()
 	    local aftermenu=0
 	    local global=1
 	    cat cfg/${line}.cfg | while read mline; do
+		test -z "$mline" && continue
 		if [ -z "${mline%%#menu*}" ]; then
 		    aftermenu=1
 		    global=0
@@ -325,6 +326,7 @@ installcfg()
     local CFGFILE=$1
     local afterinstall=1
     cat $CFGFILE | while read line; do
+	test -z "$line" && continue
 	if [ -z "${line%%#install*}" ]; then
 	    afterinstall=1
 	elif [ -z "${line%%#menu*}" -o -z "${line%%#remove*}" ]; then
@@ -342,6 +344,7 @@ removecfg()
     local flag=$2
     local afterremove=1
     cat $CFGFILE | while read line; do
+	test -z "$line" && continue
 	if [ -z "${line%%#remove*}" ]; then
 	    afterremove=1
 	elif [ -z "${line%%#menu*}" -o -z "${line%%#install*}" ]; then
