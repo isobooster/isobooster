@@ -165,6 +165,45 @@ geninitrd_mount()
     rm -rf $WORK $INITRD_MOUNT
 }
 
+geninitrd_cramfs()
+{
+    local DST=$2
+    local PATCH=$3
+    local SOURCE=$1
+    local WORK=$WORKROOT/initrd-work
+    local INITRD_MOUNT=/mnt/initrd
+
+    if [ -z $(which mkcramfs) ]; then
+	echo "Please install cramfsprogs package first."
+	return 1
+    fi
+
+    # remove first /
+    test -z "${DST%%/*}" && DST="${DST#/}"
+    test -z "${PATCH%%/*}" && PATCH="${PATCH#/}"
+    test -z "${SOURCE%%/*}" && SOURCE="${SOURCE#/}"
+    local SOURCEFILE=$(basename $SOURCE)
+
+    rm -rf $WORK
+    mkdir -pv $WORK $INITRD_MOUNT || return 1
+    mount -o loop -t cramfs $USBROOT/$SOURCE $INITRD_MOUNT || return 1
+    echo "Copying initrd files."
+    cp -ar ${INITRD_MOUNT}/* $WORK
+    umount $INITRD_MOUNT || return 1
+    pushd $WORK
+    patch -p0 -i $USBROOT/$PATCH || return 1
+    echo "Creating patched initrd."
+    mkcramfs . $USBROOT/$DST || return 1
+    popd
+    if [ ! -s $DST ]; then
+	echo "Fail to generate initrd."
+	return 1
+    else
+	echo "$DST was generated."
+    fi
+    rm -rf $WORK $INITRD_MOUNT
+}
+
 copyiso()
 {
     local ISO=$2

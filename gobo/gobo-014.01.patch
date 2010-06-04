@@ -1,0 +1,43 @@
+*** ./Programs/InitRDScripts/20080330/bin/mountGoboLinux.org	2010-06-03 23:41:48.365624087 -0700
+--- ./Programs/InitRDScripts/20080330/bin/mountGoboLinux	2010-06-04 00:24:02.418254184 -0700
+***************
+*** 2,7 ****
+--- 2,16 ----
+  
+  cdrom=/Mount/CD-ROM
+  
++ ISOFILE=""
++ for x in $(cat /proc/cmdline); do
++     case $x in
++ 	fromiso\=*)
++ 	    ISOFILE="${x#fromiso=}"
++ 	    ;;
++     esac
++ done
++ 
+  # Try IDE CDROMs
+  for d in /proc/ide/hd*
+  do
+***************
+*** 63,68 ****
+--- 72,84 ----
+     then
+        # Check for squashfs
+        ls $cdrom/*.squashfs && exit 0
++       if [ -n "$ISOFILE" -a -f "${cdrom}/${ISOFILE}" ]; then
++ 	  echo "Mounting ${device}/${ISOFILE}"
++ 	  umount "$cdrom"
++ 	  mount -o noatime,rw -t vfat "$device" /Mount/IsoDevice
++ 	  mount -o loop,ro -t iso9660 "/Mount/IsoDevice/$ISOFILE" "$cdrom"
++ 	  exit 0
++       fi
+        umount "$cdrom"
+     fi
+  done
+*** dummy	1969-12-31 16:00:00.000000000 -0800
+--- Mount/IsoDevice/.empty	2010-06-04 00:17:06.849615363 -0700
+***************
+*** 0 ****
+--- 1,2 ----
++ 
++ 

@@ -31,4 +31,6 @@ mepis/vmlinuz-*
 mepis/initrd-*
 sabayon/vmlinuz-*
 sabayon/initrd-*
+gobo/kernel-*
+gobo/initrd-*
 
