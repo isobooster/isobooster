@@ -6,8 +6,8 @@
   if grep -i -q "livecd_config=[a-zA-Z0-9/]" /proc/cmdline; then
   	export LIVECD_CONFIG=`sed 's/.*livecd_config=\([^ ]*\).*/\1/' /proc/cmdline`
   fi
-+ if grep -i -q "isofile=[a-zA-Z0-9/]" /proc/cmdline; then
-+     export ISOFILE=$(sed 's/.*isofile=\([^ ]*\).*/\1/' /proc/cmdline)
++ if grep -i -q "fromiso=[a-zA-Z0-9/]" /proc/cmdline; then
++     export ISOFILE=$(sed 's/.*fromiso=\([^ ]*\).*/\1/' /proc/cmdline)
 + fi
   
   #======================================
