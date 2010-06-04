@@ -1,5 +1,5 @@
-*** init.org	2010-05-24 19:44:16.484950321 -0700
---- init	2010-05-25 04:34:12.886602545 -0700
+*** ./init.org	2010-06-04 12:05:56.156153980 -0700
+--- ./init	2010-06-04 12:07:38.824904433 -0700
 ***************
 *** 134,141 ****
     if [ -r /mnt-system/"$knoppix_dir"/KNOPPIX ]; then
@@ -33,7 +33,7 @@
    return 1
   }
 ***************
-*** 283,289 ****
+*** 283,293 ****
   
   if [ -n "$TSCLIENT" ]; then
    # Split cmdline, find NFSDIR variable
@@ -41,11 +41,20 @@
    [ -n "$ip" ] && IP="$ip"
    [ -n "$nm" ] && NM="$nm"
    [ -n "$gw" ] && GW="$gw"
---- 296,302 ----
+   [ -n "$nfsdir" ] && NFSDIR="$nfsdir"
+  
+   echo ""
+   sleep 5
+--- 296,307 ----
   
   if [ -n "$TSCLIENT" ]; then
    # Split cmdline, find NFSDIR variable
-!  for i in $CMDLINE; do case "$i" in [Ii][Pp]=*|[Nn][Mm]=*|[Gg][Ww]=*|[Nn][Ff][Ss][Dd][Ii][Rr]=*|ISOFILE=*) eval $i;; esac; done
+!  for i in $CMDLINE; do case "$i" in [Ii][Pp]=*|[Nn][Mm]=*|[Gg][Ww]=*|[Nn][Ff][Ss][Dd][Ii][Rr]=*|fromiso=*) eval $i;; esac; done
    [ -n "$ip" ] && IP="$ip"
    [ -n "$nm" ] && NM="$nm"
    [ -n "$gw" ] && GW="$gw"
+   [ -n "$nfsdir" ] && NFSDIR="$nfsdir"
++  [ -n "$fromiso" ] && ISOFILE="$fromiso"
+  
+   echo ""
+   sleep 5
