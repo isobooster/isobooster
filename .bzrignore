@@ -2,6 +2,7 @@
 ./menu.lst
 ./boot.lst
 ./grub.exe
+./default
 ./ldlinux.sys
 .Trash*
 ./casper-rw*

@@ -310,9 +310,9 @@ installgrub4dos()
     local GRUBFILE=grub.exe
     local DEFAULTFILE=default
 
-    if [ ! -f $GRUBFILE ]; then
+    if [ ! -f $GRUBFILE -o ! -f $DEFAULTFILE ]; then
 	wget $BASEURL/$ZIPFILE -O $ZIPFILE || return 1
-	unzip -o $ZIPFILE grub4dos-${VER}/$GRUBFILE || return 1
+	unzip -o $ZIPFILE grub4dos-${VER}/$GRUBFILE grub4dos-${VER}/$DEFAULTFILE || return 1
 	mv -v grub4dos-${VER}/$GRUBFILE .
 	mv -v grub4dos-${VER}/$DEFAULTFILE .
 	rm -rv grub4dos-${VER}
