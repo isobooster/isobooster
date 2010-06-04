@@ -31,4 +31,5 @@ sabayon/vmlinuz-*
 sabayon/initrd-*
 gobo/kernel-*
 gobo/initrd-*
+./cdlinux
 
