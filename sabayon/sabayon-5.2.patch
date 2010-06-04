@@ -1,0 +1,43 @@
+*** ./init.org	2010-06-03 16:50:38.010214339 -0700
+--- ./init	2010-06-03 17:54:49.718009437 -0700
+***************
+*** 248,253 ****
+--- 248,256 ----
+  #                                 fi 	 
+  #                         fi 	 
+  #                 ;;
++ 	    fromiso\=*)
++ 		ISOFILE=`parse_opt "${x}"`
++ 		;;
+  	esac
+  done
+  
+*** ./etc/initrd.scripts.org	2010-06-03 17:46:11.774981952 -0700
+--- ./etc/initrd.scripts	2010-06-03 21:48:17.079216192 -0700
+***************
+*** 66,71 ****
+--- 66,72 ----
+  
+  	local media=$1 recon=$2 vrbl=$3
+  	local mntdir="${4}/mnt/${media}"
++ 	local mntsrcdir="${4}/mnt/isodevice"
+  	shift 4
+  
+  	good_msg "Looking for the ${media}" ${CRYPT_SILENT}
+***************
+*** 114,119 ****
+--- 115,128 ----
+  						eval ${vrbl}'='"${x}"
+  						good_msg "Media found on ${x}" ${CRYPT_SILENT}
+  						break
++ 					elif [ -n "$ISOFILE" -a -f "${mntdir}/$ISOFILE" ]; then
++ 					    good_msg "ISO file found on ${x}/$ISOFILE"
++ 					    eval ${vrbl}'='"${x}"
++ 					    umount ${mntdir}
++ 					    mkdir -p ${mntsrcdir}
++ 					    mount -r -t ${CDROOT_TYPE} ${x} ${mntsrcdir}
++ 					    mount -o loop,ro -t iso9660 ${mntsrcdir}/$ISOFILE ${mntdir}
++ 					    break
+  					else
+  						umount ${mntdir}
+  					fi

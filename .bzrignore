@@ -29,4 +29,6 @@ pclinuxos
 nimblex
 mepis/vmlinuz-*
 mepis/initrd-*
+sabayon/vmlinuz-*
+sabayon/initrd-*
 
