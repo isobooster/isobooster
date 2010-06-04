@@ -308,11 +308,13 @@ installgrub4dos()
     local ZIPFILE=grub4dos-0.4.4-2009-06-20.zip
     local VER=0.4.4
     local GRUBFILE=grub.exe
+    local DEFAULTFILE=default
 
     if [ ! -f $GRUBFILE ]; then
 	wget $BASEURL/$ZIPFILE -O $ZIPFILE || return 1
 	unzip -o $ZIPFILE grub4dos-${VER}/$GRUBFILE || return 1
 	mv -v grub4dos-${VER}/$GRUBFILE .
+	mv -v grub4dos-${VER}/$DEFAULTFILE .
 	rm -rv grub4dos-${VER}
 	rm -v $ZIPFILE
 	echo "Grub4dos was installed."
