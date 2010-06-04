@@ -13,17 +13,11 @@ prepareiso()
 {
     local ISO=$1
     local BASEURL=$2
-    local URL
 
     if [ ! -r iso/$ISO -o ! -s iso/$ISO ]; then
 	if [ -n "$BASEURL" ]; then
 	    mkdir -pv iso || return 1
-	    if [ "${BASEURL%%.iso}" = "${BASEURL}" ]; then
-		URL=${BASEURL}/$ISO
-	    else
-		URL=${BASEURL}
-	    fi
-	    wget -c ${URL} -O iso/${ISO}.part || return 1
+	    wget -c ${BASEURL} -O iso/${ISO}.part || return 1
 	    mv -v iso/${ISO}.part iso/$ISO || return 1
 	else
 	    echo "$ISO is not exist."

@@ -1,5 +1,5 @@
 ISOFILE=osol-0906-x86.iso
-BASEURL=http://dlc.sun.com/osol/opensolaris/2009/06
+BASEURL=http://dlc.sun.com/osol/opensolaris/2009/06/$ISOFILE
 
 #install
 prepareiso $ISOFILE $BASEURL
