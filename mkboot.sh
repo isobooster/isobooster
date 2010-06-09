@@ -5,8 +5,8 @@ CURDIR=$(pwd)
 cd $(dirname $0)
 USBROOT=$(pwd)
 WORKROOT=/tmp
-MENUFILE=menu.lst
-BOOTFILE=boot.lst
+MENUFILE=boot/grub/grub.cfg
+BOOTFILE=boot/boot.lst
 ISOMOUNTDIR=/mnt/iso
 
 prepareiso()
@@ -272,7 +272,12 @@ genmenu()
 		    aftermenu=0
 		    global=0
 		elif [ $aftermenu -eq 1 ]; then
-		    eval "echo \"$mline\"" >> $MENUFILE
+		    # replace " -> @, because eval removes "
+		    mline=$(echo $mline | sed 's/\"/@/g')
+		    mline=$(eval "echo \"$mline\"")
+		    # replace back @ -> "
+		    mline=$(echo $mline | sed 's/@/\"/g')
+		    echo "$mline" >> $MENUFILE
 		elif [ $global -eq 1 ]; then
 		    eval $mline
 		fi
@@ -321,6 +326,22 @@ installgrub4dos()
     else
 	echo "Grub4dos is exist."
     fi
+}
+
+installgrub2()
+{
+    local USBDEV=$1
+    if [ -z $USBDEV ]; then
+	echo "Please specify USB device partition."
+	return 1
+    fi
+    if [ -z $(which grub-install) ]; then
+	echo "Please install syslinux and try again."
+	return 1
+    fi
+
+    grub-install --no-floppy --root-directory=${USBROOT} --force $USBDEV || return 1
+    echo "Grub2 was installed."
 }
 
 installcfg()
@@ -401,8 +422,9 @@ case $DISTRO in
 	fi
 	mlabel -i $2 -c ::MULTIBOOT || exit 1
 	mlabel -i $2 -s ::
-	installsyslinux $2 || exit 1
-	installgrub4dos
+#	installsyslinux $2 || exit 1
+#	installgrub4dos
+	installgrub2 $2
 	;;
     genmenu)
 	genmenu
