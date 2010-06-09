@@ -341,6 +341,7 @@ installgrub2()
     fi
 
     grub-install --no-floppy --root-directory=${USBROOT} --force $USBDEV || return 1
+    grub-set-default --root-directory=${USBROOT} 0
     echo "Grub2 was installed."
 }
 

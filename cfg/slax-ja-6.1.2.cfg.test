@@ -3,10 +3,17 @@ BASEURL="http://sourceforge.jp/frs/redir.php?m=globalbase&f=%2Fslax%2F44899%2Fsl
 
 #install
 prepareiso $ISOFILE $BASEURL
-copyfromiso /boot/vmlinuz slax/vmlinuz-ja-6.1.2
-copyfromiso /boot/initrd.gz slax/initrd-ja-6.1.2.gz
+#copyfromiso /boot/vmlinuz slax/vmlinuz-ja-6.1.2
+#copyfromiso /boot/initrd.gz slax/initrd-ja-6.1.2.gz
+
+#remove
+purgefile /iso/$ISOFILE
 
 #menu
-title Slax-ja 6.1.2 (ISO)
-kernel /slax/vmlinuz-ja-6.1.2 ramdisk_size=6666 root=/dev/ram0 rw autoexec=xconf;telinit~4 changes=/slax from=iso/$ISOFILE
-initrd /slax/initrd-ja-6.1.2.gz
+menuentry "Slax-ja 6.1.2 (ISO)" {
+  loopback loop /iso/$ISOFILE
+  echo "Loading kernel.."
+  linux (loop)/slax/vmlinuz ramdisk_size=6666 root=/dev/ram0 rw autoexec=xconf;telinit~4 changes=/slax from=/iso/$ISOFILE
+  echo "Loading initrd.."
+  initrd (loop)/boot/initrd.gz
+}

@@ -3,6 +3,14 @@ BASEURL=http://dlc.sun.com/osol/opensolaris/2009/06/$ISOFILE
 
 #install
 prepareiso $ISOFILE $BASEURL
-copyiso opensolaris-2009.06 $ISOFILE
+#copyiso opensolaris-2009.06 $ISOFILE
+
+#remove
+purgefile /iso/$ISOFILE
 
 #menu
+menuentry "OpenSolaris 2009.06" {
+  savedefault
+  loopback loop /iso/$ISOFILE
+  chainloader (loop)+1
+}

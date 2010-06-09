@@ -1,5 +1,5 @@
-*** ./init.org	2010-06-04 12:05:56.156153980 -0700
---- ./init	2010-06-04 12:07:38.824904433 -0700
+*** ./init.org	2010-06-09 12:39:40.011318387 -0700
+--- ./init	2010-06-09 12:42:58.341318114 -0700
 ***************
 *** 134,141 ****
     if [ -r /mnt-system/"$knoppix_dir"/KNOPPIX ]; then
@@ -10,21 +10,22 @@
    done
    return 1
   }
---- 134,154 ----
+--- 134,155 ----
     if [ -r /mnt-system/"$knoppix_dir"/KNOPPIX ]; then
      echo -e "\r${CRE}${GREEN}$DISTRO ${FOUNDAT}: ${MAGENTA}$dev${NORMAL}       "
      return 0
-+   elif [ -n "$ISOFILE" -a -r "/mnt-system/$ISOFILE" ]; then
++   elif [ -n "$fromiso" -a -r "/mnt-system/$fromiso" ]; then
 +       umount /mnt-system
-+       mkdir -p /mnt-basesystem
-+       trymount "$dev" /mnt-basesystem >/dev/null 2>&1
-+       mount -t iso9660 -o loop,ro "/mnt-basesystem/$ISOFILE" /mnt-system
++       mkdir -p /isodevice
++       trymount "$dev" /isodevice >/dev/null 2>&1
++       mount -t iso9660 -o loop,ro "/isodevice/$fromiso" /mnt-system
 +       if [ -r /mnt-system/"$knoppix_dir"/KNOPPIX ]; then
-+ 	  echo -e "\r${CRE}${GREEN}$DISTRO ${FOUNDAT}: ${MAGENTA}${dev}/${ISOFILE}${NORMAL}       "
++ 	  echo -e "\r${CRE}${GREEN}$DISTRO ${FOUNDAT}: ${MAGENTA}${dev}/${fromiso}${NORMAL}       "
 + 	  return 0
 +       else
 + 	  umount /mnt-system
-+ 	  umount /mnt-basesystem
++ 	  umount /isodevice
++ 	  rmdir /isodevice
 +       fi
 +   else
 +       umount /mnt-system
@@ -32,29 +33,3 @@
    done
    return 1
   }
-***************
-*** 283,293 ****
-  
-  if [ -n "$TSCLIENT" ]; then
-   # Split cmdline, find NFSDIR variable
-!  for i in $CMDLINE; do case "$i" in [Ii][Pp]=*|[Nn][Mm]=*|[Gg][Ww]=*|[Nn][Ff][Ss][Dd][Ii][Rr]=*) eval $i;; esac; done
-   [ -n "$ip" ] && IP="$ip"
-   [ -n "$nm" ] && NM="$nm"
-   [ -n "$gw" ] && GW="$gw"
-   [ -n "$nfsdir" ] && NFSDIR="$nfsdir"
-  
-   echo ""
-   sleep 5
---- 296,307 ----
-  
-  if [ -n "$TSCLIENT" ]; then
-   # Split cmdline, find NFSDIR variable
-!  for i in $CMDLINE; do case "$i" in [Ii][Pp]=*|[Nn][Mm]=*|[Gg][Ww]=*|[Nn][Ff][Ss][Dd][Ii][Rr]=*|fromiso=*) eval $i;; esac; done
-   [ -n "$ip" ] && IP="$ip"
-   [ -n "$nm" ] && NM="$nm"
-   [ -n "$gw" ] && GW="$gw"
-   [ -n "$nfsdir" ] && NFSDIR="$nfsdir"
-+  [ -n "$fromiso" ] && ISOFILE="$fromiso"
-  
-   echo ""
-   sleep 5
