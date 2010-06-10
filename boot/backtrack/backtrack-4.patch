@@ -1,0 +1,18 @@
+*** ./scripts/casper.org	2010-06-09 23:06:29.581677587 -0700
+--- ./scripts/casper	2010-06-09 23:28:59.188678761 -0700
+***************
+*** 467,472 ****
+--- 467,479 ----
+             ([ "$skip_uuid_check" ] || matches_uuid $mountpoint); then
+              echo $mountpoint
+              return 0
++ 	elif [ -n "$LOOP" -a -f "${mountpoint}/${LOOP#/}" ]; then
++ 	    mkdir -p /isodevice
++ 	    mount --move $mountpoint /isodevice
++ 	    LDEV=$(losetup -f --show /isodevice/${LOOP#/})
++ 	    mount -t iso9660 -o ro $LDEV $mountpoint
++ 	    echo $mountpoint
++ 	    return 0
+          else
+              umount $mountpoint
+          fi
