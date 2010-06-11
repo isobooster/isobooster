@@ -46,6 +46,49 @@ prepareiso4pmagic()
     fi
 }
 
+checksum()
+{
+    local FILE=$1
+    local SUM=$2
+    local TYPE=$3
+    if [ -z "$TYPE" ]; then
+	TYPE="md5"
+    fi
+
+    test -z "${FILE%%/*}" && FILE="${FILE#/}"
+
+    echo "checking $TYPE sum.."
+
+    if [ -s ${FILE}.sum ]; then
+	ORGSUM=$(cat ${FILE}.sum | cut -f 1 -d ' ')
+	test "$ORGSUM" = "$SUM"
+    else
+	case $TYPE in
+	    md5)
+		echo "$SUM  $FILE" | md5sum -c
+		;;
+	    sha1)
+		echo "$SUM  $FILE" | sha1sum -c
+		;;
+	    sha256)
+		echo "$SUM  $FILE" | sha256sum -c
+		;;
+	    *)
+		echo "Unknown checksum type: $TYPE"
+		return 1
+		;;
+	esac
+    fi
+    if [ $? -ne 0 ]; then
+	echo "$TYPE sum is not matched. Please download $FILE again."
+	return 1
+    else
+	echo "$SUM  $FILE" > ${FILE}.sum
+    fi
+    echo "$TYPE sum was verified."
+    return 0
+}
+
 mountiso()
 {
     local ISO=$1
@@ -127,6 +170,7 @@ geninitrd_mount()
     local DST=$2
     local PATCH=$3
     local SOURCE=$1
+    local FORMAT=$4
     local WORK=$WORKROOT/initrd-work
     local INITRD_MOUNT=/mnt/initrd
 
@@ -143,20 +187,28 @@ geninitrd_mount()
 	gunzip $WORK/$SOURCEFILE || return 1
 	SOURCEFILE="${SOURCEFILE%%.gz}"
     fi
-    mount -o loop $WORK/$SOURCEFILE $INITRD_MOUNT || return 1
+    local LOOPDEV=$(losetup -f --show $WORK/$SOURCEFILE)
+    mount -v $LOOPDEV $INITRD_MOUNT || return 1
     pushd $INITRD_MOUNT
     patch -p0 -i $USBROOT/$PATCH || return 1
-    popd
-    umount $INITRD_MOUNT || return 1
     echo "Creating patched initrd"
-    gzip -c $WORK/$SOURCEFILE > $USBROOT/$DST || return 1
-    if [ ! -s $DST ]; then
+    if [ "$FORMAT" = "cpio" ]; then
+	find . | cpio -o -H newc | gzip - > $USBROOT/$DST
+    fi
+    popd
+    umount -v $INITRD_MOUNT || return 1
+    losetup -d $LOOPDEV
+    if [ -z "$FORMAT" -o "$FORMAT" = "ext2" ]; then
+	gzip -c $WORK/$SOURCEFILE > $USBROOT/$DST || return 1
+    fi
+    if [ ! -s $USBROOT/$DST ]; then
 	echo "Fail to generate initrd."
 	return 1
     else
 	echo "$DST was generated."
     fi
     rm -rf $WORK $INITRD_MOUNT
+    return 0
 }
 
 geninitrd_cramfs()
@@ -180,10 +232,10 @@ geninitrd_cramfs()
 
     rm -rf $WORK
     mkdir -pv $WORK $INITRD_MOUNT || return 1
-    mount -o loop -t cramfs $USBROOT/$SOURCE $INITRD_MOUNT || return 1
+    mount -v -o loop -t cramfs $USBROOT/$SOURCE $INITRD_MOUNT || return 1
     echo "Copying initrd files."
     cp -ar ${INITRD_MOUNT}/* $WORK
-    umount $INITRD_MOUNT || return 1
+    umount -v $INITRD_MOUNT || return 1
     pushd $WORK
     patch -p0 -i $USBROOT/$PATCH || return 1
     echo "Creating patched initrd."
@@ -359,7 +411,7 @@ installcfg()
 	    eval $line || return 1
 	fi
     done
-    return 0
+    return $?
 }
 
 removecfg()
@@ -379,7 +431,7 @@ removecfg()
 	    fi
 	fi
     done
-    return 0
+    return $?
 }
 
 rmfile()

@@ -1,5 +1,5 @@
 *** ./linuxrc.org	2010-06-03 12:23:32.115140548 -0700
---- ./linuxrc	2010-06-03 12:42:32.875207348 -0700
+--- ./linuxrc	2010-06-10 11:55:53.322400316 -0700
 ***************
 *** 322,328 ****
   	*fromhd*|*fromiso*|*bootusb*|*bootusb2*|*tohd*|*fstab*|*modules-disk*|*ideraid*)
@@ -17,3 +17,34 @@
   		;;
   esac
   
+***************
+*** 895,900 ****
+--- 895,903 ----
+  	fi
+  }
+  
++ echo "Scanning devices=$DEVICES"
++ retry=20
++ while [ $retry -gt 0 ]; do
+  for i in $DEVICES; do
+  	# unless TESTMNT is set we won't look here for KNOPPIX/chroot
+  	TESTMNT=""
+***************
+*** 935,940 ****
+--- 938,953 ----
+  		break
+  	fi
+  done
++ 	if test -n "$FOUND_KNOPPIX" && ( test -z "$FSTAB" || test -n "$FOUND_FSTAB" ); then
++ 		# everything is found so we are finished scanning
++ 		break
++ 	fi
++ 	# keep retry
++ 	retry=$(expr $retry - 1)
++ 	sleep 5
++ done
++ 
++ echo "found_knoppix=$FOUND_KNOPPIX, fstab=$FSTAB, found_fstab=$FOUND_FSTAB"
+  
+  if test -n "$FSTAB" && test -z "$FOUND_FSTAB"; then
+  	echo "${CRE}${RED}Failed to find requested fstab file ${GREEN}${FSTABFILE}${NORMAL}"
