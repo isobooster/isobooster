@@ -462,6 +462,7 @@ rmfile()
 
     test -e $file && rm -rfv $file
     test -e ${file}.sum && rm -rfv ${file}.sum
+    return 0
 }
 
 purgefile()
@@ -472,6 +473,7 @@ purgefile()
 
     test -e $file && rm -rfv $file
     test -e ${file}.sum && rm -rfv ${file}.sum
+    return 0
 }
 
 if [ -z "$1" ]; then
