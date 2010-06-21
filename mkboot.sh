@@ -6,6 +6,7 @@ cd $(dirname $0)
 USBROOT=$(pwd)
 WORKROOT=/tmp
 MENUFILE=boot/grub/grub.cfg
+MENU1FILE=boot/grub/menu.lst
 BOOTFILE=boot/boot.lst
 ISOMOUNTDIR=/mnt/iso
 
@@ -309,8 +310,10 @@ delboot()
 genmenu()
 {
     local aftermenu
+    local grubver
     # generate menu file
     cat cfg/head.cfg > $MENUFILE
+    cat cfg/head1.cfg > $MENU1FILE
     sort $BOOTFILE | while read line; do
 	if [ -f cfg/${line}.cfg ]; then
 	    local aftermenu=0
@@ -319,17 +322,29 @@ genmenu()
 		test -z "$mline" && continue
 		if [ -z "${mline%%#menu*}" ]; then
 		    aftermenu=1
+		    if [ -z "${mline%%#menu1*}" ]; then
+			grubver=1
+		    else
+			grubver=2
+		    fi
 		    global=0
 		elif [ -z "${mline%%#install*}" -o -z "${mline%%#remove*}" ]; then
 		    aftermenu=0
 		    global=0
 		elif [ $aftermenu -eq 1 ]; then
+		    case $grubver in
+			1)
+			    eval "echo \"$mline\"" >> $MENU1FILE
+			    ;;
+			*)
 		    # replace " -> @, because eval removes "
-		    mline=$(echo $mline | sed 's/\"/@/g')
-		    mline=$(eval "echo \"$mline\"")
+			    mline=$(echo $mline | sed 's/\"/@/g')
+			    mline=$(eval "echo \"$mline\"")
 		    # replace back @ -> "
-		    mline=$(echo $mline | sed 's/@/\"/g')
-		    echo "$mline" >> $MENUFILE
+			    mline=$(echo $mline | sed 's/@/\"/g')
+			    echo "$mline" >> $MENUFILE
+			    ;;
+		    esac
 		elif [ $global -eq 1 ]; then
 		    eval $mline
 		fi
@@ -340,8 +355,11 @@ genmenu()
 	fi
     done
     cat cfg/tail.cfg >> $MENUFILE
+    cat cfg/tail1.cfg >> $MENU1FILE
     echo "Boot menu was updated."
 }
+
+# we don't need syslinux now.
 
 installsyslinux()
 {
@@ -358,6 +376,8 @@ installsyslinux()
     syslinux $USBDEV || return 1
     echo "Syslinux was installed."
 }
+
+# for chainload from grub2
 
 installgrub4dos()
 {
@@ -388,7 +408,7 @@ installgrub2()
 	return 1
     fi
     if [ -z $(which grub-install) ]; then
-	echo "Please install syslinux and try again."
+	echo "Please install grub2 and try again."
 	return 1
     fi
 
@@ -440,7 +460,8 @@ rmfile()
     # remove first /
     test -z "${file%%/*}" && file="${file#/}"
 
-    rm -rfv $file
+    test -e $file && rm -rfv $file
+    test -e ${file}.sum && rm -rfv ${file}.sum
 }
 
 purgefile()
@@ -449,7 +470,8 @@ purgefile()
     # remove first /
     test -z "${file%%/*}" && file="${file#/}"
 
-    rm -rfv $file
+    test -e $file && rm -rfv $file
+    test -e ${file}.sum && rm -rfv ${file}.sum
 }
 
 if [ -z "$1" ]; then
@@ -476,7 +498,7 @@ case $DISTRO in
 	mlabel -i $2 -c ::MULTIBOOT || exit 1
 	mlabel -i $2 -s ::
 #	installsyslinux $2 || exit 1
-#	installgrub4dos
+	installgrub4dos
 	installgrub2 $2
 	;;
     genmenu)

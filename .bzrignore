@@ -31,4 +31,4 @@ boot/debian/vmlinuz-*
 boot/debian/initrd-*
 boot/slax
 ./slax
-
+boot/nimblex
