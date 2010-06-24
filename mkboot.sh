@@ -404,7 +404,7 @@ installgrub2()
 {
     local USBDEV=$1
     if [ -z $USBDEV ]; then
-	echo "Please specify USB device partition."
+	echo "Please specify USB device."
 	return 1
     fi
     if [ -z $(which grub-install) ]; then
@@ -490,6 +490,7 @@ DISTRO=$1
 
 case $DISTRO in
     bootloader)
+	DEV=$2
 	if [ -z $(which mlabel) ]; then
 	    echo "Please install mtools and try again."
 	    exit 1
@@ -497,11 +498,11 @@ case $DISTRO in
 	if [ -z $(grep "mtools_skip_check" ~/.mtoolsrc) ]; then	
 	    echo "mtools_skip_check=1" >> ~/.mtoolsrc
 	fi
-	mlabel -i $2 -c ::MULTIBOOT || exit 1
-	mlabel -i $2 -s ::
-#	installsyslinux $2 || exit 1
+	mlabel -i ${DEV}1 -c ::MULTIBOOT || exit 1
+	mlabel -i ${DEV}1 -s ::
+#	installsyslinux ${DEV}1 || exit 1
 	installgrub4dos
-	installgrub2 $2
+	installgrub2 $DEV
 	;;
     genmenu)
 	genmenu

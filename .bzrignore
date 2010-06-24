@@ -32,3 +32,5 @@ boot/debian/initrd-*
 boot/slax
 ./slax
 boot/nimblex
+boot/lemmyos
+
