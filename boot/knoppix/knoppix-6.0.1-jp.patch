@@ -1,5 +1,5 @@
 *** ./init.org	2010-06-09 12:39:40.011318387 -0700
---- ./init	2010-06-09 12:42:58.341318114 -0700
+--- ./init	2010-06-30 18:28:39.076355332 -0700
 ***************
 *** 134,141 ****
     if [ -r /mnt-system/"$knoppix_dir"/KNOPPIX ]; then
@@ -10,23 +10,16 @@
    done
    return 1
   }
---- 134,155 ----
+--- 134,148 ----
     if [ -r /mnt-system/"$knoppix_dir"/KNOPPIX ]; then
      echo -e "\r${CRE}${GREEN}$DISTRO ${FOUNDAT}: ${MAGENTA}$dev${NORMAL}       "
      return 0
-+   elif [ -n "$fromiso" -a -r "/mnt-system/$fromiso" ]; then
-+       umount /mnt-system
-+       mkdir -p /isodevice
-+       trymount "$dev" /isodevice >/dev/null 2>&1
-+       mount -t iso9660 -o loop,ro "/isodevice/$fromiso" /mnt-system
-+       if [ -r /mnt-system/"$knoppix_dir"/KNOPPIX ]; then
-+ 	  echo -e "\r${CRE}${GREEN}$DISTRO ${FOUNDAT}: ${MAGENTA}${dev}/${fromiso}${NORMAL}       "
-+ 	  return 0
-+       else
-+ 	  umount /mnt-system
-+ 	  umount /isodevice
-+ 	  rmdir /isodevice
-+       fi
++   elif [ -n "$fromiso" -a -f "/mnt-system/$fromiso" ]; then
++       mkdir -p /mnt-isodevice
++       mount --move /mnt-system /mnt-isodevice >/dev/null 2>&1
++       mount -t iso9660 -o loop,ro "/mnt-isodevice/$fromiso" /mnt-system
++       echo -e "\r${CRE}${GREEN}$DISTRO ${FOUNDAT}: ${MAGENTA}${dev}/${fromiso}${NORMAL}       "
++       return 0
 +   else
 +       umount /mnt-system
     fi
