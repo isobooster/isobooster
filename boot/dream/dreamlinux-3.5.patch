@@ -1,0 +1,57 @@
+*** ./bin/init.lua.org	2010-06-30 16:47:03.996519704 -0700
+--- ./bin/init.lua	2010-06-30 17:24:13.906301063 -0700
+***************
+*** 39,44 ****
+--- 39,53 ----
+  
+  -- check if Dreamlinux base module was found
+  function found_dream()
++ 	if fromiso ~= "" then
++ 	   	if os.execute("ls /dream/media/" .. fromiso .. " >/dev/null 2>/dev/null") == 0 then
++ 			print("Found iso: " .. fromiso)
++ 			os.execute("mkdir -p /dream/isodevice")
++ 			os.execute("mount --move /dream/media /dream/isodevice")
++ 			os.execute("mount -o loop -t iso9660 /dream/isodevice/" .. fromiso .. " /dream/media")
++ 			return true
++ 		end
++ 	end
+  	if  os.execute("ls /dream/media/modules/base/* >/dev/null 2>/dev/null") == 0 then return true else return false end
+  end
+  
+***************
+*** 75,81 ****
+  		--  mount device and check if there is any DL module image 
+  		for usb_device in ipairs(usb_devices) do
+  			usb_partition = usb_devices[usb_device] .. "1"
+! 			if os.execute("mount " .. usb_partition .. " /dream/media >/dev/null 2>/dev/null") == 0 then return found_dream() end
+  		end
+  	else
+  		return false
+--- 84,94 ----
+  		--  mount device and check if there is any DL module image 
+  		for usb_device in ipairs(usb_devices) do
+  			usb_partition = usb_devices[usb_device] .. "1"
+! 			if os.execute("mount " .. usb_partition .. " /dream/media >/dev/null 2>/dev/null") == 0 then
+! 				local ret = found_dream()
+! 				if ret then return ret end
+! 				os.execute("umount /dream/media >/dev/null 2>/dev/null")
+! 			end
+  		end
+  	else
+  		return false
+***************
+*** 129,134 ****
+--- 142,154 ----
+  	break_point=string.sub(cmdline,ends+1,cmd_len)
+  end
+  --end tinde addition
++ --for iso boot
++ if os.execute("cat /proc/cmdline | grep -iq fromiso=") == 0 then
++ 	cmdline=io.popen("cat /proc/cmdline"):read("*l")
++ 	cmd_len=string.len(cmdline)
++ 	begins,ends=string.find(cmdline,"fromiso=")
++ 	fromiso=string.sub(cmdline,ends+1,cmd_len)
++ end
+  
+  -- first break to shell /tinde
+  if break_point == "top" then
