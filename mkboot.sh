@@ -149,10 +149,10 @@ geninitrd()
     mkdir -pv $WORK
     pushd $WORK
     zcat $USBROOT/$SOURCE | cpio -i -H newc --no-absolute-filenames
-    if [ ! -f init ]; then
-	echo "Fail to extract initrd."
-	return 1
-    fi
+#    if [ $(du -s . | cut -f 1) -eq 0 ]; then
+#	echo "Fail to extract initrd."
+#	return 1
+#    fi
     patch -p0 -i $USBROOT/$PATCH || return 1
     echo "Creating patched initrd"
     find . | cpio -o -H newc | gzip - > $USBROOT/$DST

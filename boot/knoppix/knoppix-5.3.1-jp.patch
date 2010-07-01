@@ -1,0 +1,19 @@
+*** ./linuxrc.org	2010-07-01 11:48:01.946876438 -0700
+--- ./linuxrc	2010-07-01 12:33:56.495625546 -0700
+***************
+*** 630,635 ****
+--- 630,643 ----
+     echo -n "${CRE}${GREEN}Accessing KNOPPIX ${MEDIUM} at ${MAGENTA}$i${GREEN}...${NORMAL}"
+     FOUND_KNOPPIX="$i"
+     break
++   elif [ -n "$fromiso" -a -f "/cdrom/${fromiso}" ]; then
++       loadmodule loop
++       mkdir -p /isodevice
++       mount -o move /cdrom /isodevice
++       mount -n -o loop "/isodevice/${fromiso}" /cdrom
++       echo -n "${CRE}${GREEN}Accessing KNOPPIX ISO ${MEDIUM} at ${MAGENTA}$i/${fromiso}${GREEN}...${NORMAL}"
++       FOUND_KNOPPIX="$i"
++       break
+    fi
+    umount /cdrom
+   fi
