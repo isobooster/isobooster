@@ -1,107 +1,31 @@
-*** ./scripts/live.org	2010-05-28 09:55:47.942518232 -0700
---- ./scripts/live	2010-05-28 10:33:25.946574392 -0700
+*** ./scripts/live.org	2010-07-01 13:23:10.365649565 -0700
+--- ./scripts/live	2010-07-01 13:33:13.865625651 -0700
 ***************
 *** 378,383 ****
 --- 378,387 ----
   
   				LOCATION="/tmp/$(basename "${location}")"
   				;;
-+ 				iso-scan/filename=*)
-+ 				ISOFILE="${ARGUMENT#iso-scan/filename=}"
++ 			iso-scan/filename=*)
++ 			        ISOFILE="${ARGUMENT#iso-scan/filename=}"
 + 				export ISOFILE
 + 				;;
   
   			*/*=*)
   				question="${ARGUMENT%%=*}"
 ***************
-*** 504,509 ****
---- 508,514 ----
-  is_live_path ()
-  {
-  	DIRECTORY="${1}"
-+ 	DEVNAME="${2}"
-  
-  	if [ -d "${DIRECTORY}"/"${LIVE_MEDIA_PATH}" ]
-  	then
-***************
 *** 514,519 ****
---- 519,533 ----
+--- 518,530 ----
   				return 0
   			fi
   		done
 + 	elif [ -n "$ISOFILE" -a -f "${DIRECTORY}/$ISOFILE" ]; then
 + 	    # remount ISO
-+ 	    echo "Mounting ISO file."
-+ 	    umount "$DEVNAME" > /dev/null
-+ 	    mkdir -p /isodevice
-+ 	    mount -v -t auto "$DEVNAME" /isodevice
++ 	    mkdir -p /isodevice > /dev/null 2>&1
++ 	    mount --move -n $DIRECTORY /isodevice > /dev/null 2>&1
 + 	    loopdev=$(setup_loop "/isodevice/$ISOFILE" "loop" "/sys/block/loop*" '0' '')
-+ 	    mount -v -o loop -t iso9660 $loopdev $DIRECTORY
++ 	    mount -o loop -t iso9660 $loopdev $DIRECTORY >/dev/null 2>&1
 + 	    return 0
   	fi
   
   	return 1
-***************
-*** 1343,1354 ****
-  	then
-  		devname=$(sys2dev "${sysdev}")
-  	fi
-  
-  	if [ -d "${devname}" ]
-  	then
-  		mount -o bind "${devname}" $mountpoint || continue
-  
-! 		if is_live_path $mountpoint
-  		then
-  			echo $mountpoint
-  			return 0
---- 1357,1369 ----
-  	then
-  		devname=$(sys2dev "${sysdev}")
-  	fi
-+ #	echo "checking dev=$devname"
-  
-  	if [ -d "${devname}" ]
-  	then
-  		mount -o bind "${devname}" $mountpoint || continue
-  
-! 		if is_live_path $mountpoint "${devname}"
-  		then
-  			echo $mountpoint
-  			return 0
-***************
-*** 1369,1375 ****
-  	then
-  		mount -t ${fstype} -o ro,noatime "${devname}" ${mountpoint} || continue
-  
-! 		if is_live_path ${mountpoint} && \
-  			([ "${skip_uuid_check}" ] || matches_uuid ${mountpoint})
-  		then
-  			echo ${mountpoint}
---- 1384,1390 ----
-  	then
-  		mount -t ${fstype} -o ro,noatime "${devname}" ${mountpoint} || continue
-  
-! 		if is_live_path ${mountpoint} "${devname}" && \
-  			([ "${skip_uuid_check}" ] || matches_uuid ${mountpoint})
-  		then
-  			echo ${mountpoint}
-***************
-*** 1571,1578 ****
-  			i=0
-  			while [ "$i" -lt 60 ]
-  			do
-! 				livefs_root=$(find_livefs ${i})
-! 
-  				if [ -n "${livefs_root}" ]
-  				then
-  					break
---- 1586,1593 ----
-  			i=0
-  			while [ "$i" -lt 60 ]
-  			do
-! 			    #livefs_root=$(find_livefs ${i})
-! 			    find_livefs ${i} && livefs_root=$mountpoint
-  				if [ -n "${livefs_root}" ]
-  				then
-  					break
