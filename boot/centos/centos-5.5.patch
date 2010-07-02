@@ -38,9 +38,9 @@
 ! if [ -z $isofile ] ; then
 !     mount -n -t $rootfstype $mountoptions $thingtomount /sysroot
 ! else
-!     mkdir /sysroot-org
-!     mount -n -t $rootfstype $mountoptions $thingtomount /sysroot-org
-!     mount -n -o loop /sysroot-org/$isofile /sysroot
+!     mkdir -p /isodevice
+!     mount -n -t $rootfstype $mountoptions $thingtomount /isodevice
+!     mount -n -o loop /isodevice/$isofile /sysroot
 ! fi
   RES=$?
   
