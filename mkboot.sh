@@ -148,14 +148,39 @@ geninitrd()
     rm -rf $WORK
     mkdir -pv $WORK
     pushd $WORK
-    zcat $USBROOT/$SOURCE | cpio -i -H newc --no-absolute-filenames
-#    if [ $(du -s . | cut -f 1) -eq 0 ]; then
-#	echo "Fail to extract initrd."
-#	return 1
-#    fi
+    zcat $USBROOT/$SOURCE | cpio -i -H newc --no-absolute-filenames || return 1
     patch -p0 -i $USBROOT/$PATCH || return 1
     echo "Creating patched initrd"
-    find . | cpio -o -H newc | gzip - > $USBROOT/$DST
+    find . | cpio --quiet --dereference -o -H newc | gzip - > $USBROOT/$DST
+    popd
+    if [ ! -s $DST ]; then
+	echo "Fail to generate initrd."
+	return 1
+    else
+	echo "$DST was generated."
+    fi
+    rm -rf $WORK
+}
+
+geninitrd_lzma()
+{
+    local DST=$2
+    local PATCH=$3
+    local SOURCE=$1
+    local WORK=$WORKROOT/initrd-work
+
+    # remove first /
+    test -z "${DST%%/*}" && DST="${DST#/}"
+    test -z "${PATCH%%/*}" && PATCH="${PATCH#/}"
+    test -z "${SOURCE%%/*}" && SOURCE="${SOURCE#/}"
+
+    rm -rf $WORK
+    mkdir -pv $WORK
+    pushd $WORK
+    lzma -dc -S .lz $USBROOT/$SOURCE | cpio -i -H newc --no-absolute-filenames || return 1
+    patch -p0 -i $USBROOT/$PATCH || return 1
+    echo "Creating patched initrd"
+    find . | cpio --quiet --dereference -o -H newc | gzip - > $USBROOT/$DST
     popd
     if [ ! -s $DST ]; then
 	echo "Fail to generate initrd."
@@ -320,34 +345,40 @@ genmenu()
 	    local global=1
 	    cat cfg/${line}.cfg | while read mline; do
 		test -z "$mline" && continue
-		if [ -z "${mline%%#menu*}" ]; then
-		    aftermenu=1
-		    if [ -z "${mline%%#menu1*}" ]; then
-			grubver=1
-		    else
-			grubver=2
-		    fi
-		    global=0
-		elif [ -z "${mline%%#install*}" -o -z "${mline%%#remove*}" ]; then
-		    aftermenu=0
-		    global=0
-		elif [ $aftermenu -eq 1 ]; then
-		    case $grubver in
-			1)
-			    eval "echo \"$mline\"" >> $MENU1FILE
-			    ;;
-			*)
+		case $mline in
+		    "#menu"*)
+			aftermenu=1
+			if [ -z "${mline%%#menu1*}" ]; then
+			    grubver=1
+			else
+			    grubver=2
+			fi
+			global=0
+			;;
+		    "#install"*|"#remove"*|"#command"*)
+			aftermenu=0
+			global=0
+			;;
+		    *)
+			if [ $aftermenu -eq 1 ]; then
+			    case $grubver in
+				1)
+				    eval "echo \"$mline\"" >> $MENU1FILE
+				    ;;
+				*)
 		    # replace " -> @, because eval removes "
-			    mline=$(echo $mline | sed 's/\"/@/g')
-			    mline=$(eval "echo \"$mline\"")
+				    mline=$(echo $mline | sed 's/\"/@/g')
+				    mline=$(eval "echo \"$mline\"")
 		    # replace back @ -> "
-			    mline=$(echo $mline | sed 's/@/\"/g')
-			    echo "$mline" >> $MENUFILE
-			    ;;
-		    esac
-		elif [ $global -eq 1 ]; then
-		    eval $mline
-		fi
+				    mline=$(echo $mline | sed 's/@/\"/g')
+				    echo "$mline" >> $MENUFILE
+				    ;;
+			    esac
+			elif [ $global -eq 1 ]; then
+			    eval $mline
+			fi
+			;;
+		esac
 	    done
 	    echo "" >> $MENUFILE
 	else
@@ -423,13 +454,19 @@ installcfg()
     local afterinstall=1
     cat $CFGFILE | while read line; do
 	test -z "$line" && continue
-	if [ -z "${line%%#install*}" ]; then
-	    afterinstall=1
-	elif [ -z "${line%%#menu*}" -o -z "${line%%#remove*}" ]; then
-	    afterinstall=0
-	elif [ $afterinstall -eq 1 ]; then
-	    eval $line || return 1
-	fi
+	case $line in
+	    "#install"*)
+		afterinstall=1
+		;;
+	    "#menu"*|"#remove"*|"#command"*)
+		afterinstall=0
+		;;
+	    *)
+		if [ $afterinstall -eq 1 ]; then
+		    eval $line || return 1
+		fi
+		;;
+	esac
     done
     return $?
 }
@@ -441,15 +478,50 @@ removecfg()
     local afterremove=1
     cat $CFGFILE | while read line; do
 	test -z "$line" && continue
-	if [ -z "${line%%#remove*}" ]; then
-	    afterremove=1
-	elif [ -z "${line%%#menu*}" -o -z "${line%%#install*}" ]; then
-	    afterremove=0
-	elif [ $afterremove -eq 1 ]; then
-	    if [ "$flag" = "purge" -o -n "${line%%purgefile*}" ]; then
-		eval $line || return 1
-	    fi
-	fi
+	case $line in
+	    "#remove"*)
+		afterremove=1
+		;;
+	    "#menu"*|"#install"*|"#command"*)
+		afterremove=0
+		;;
+	    *)
+		if [ $afterremove -eq 1 ]; then
+		    if [ "$flag" = "purge" -o -n "${line%%purgefile*}" ]; then
+			eval $line || return 1
+		    fi
+		fi
+		;;
+	esac
+    done
+    return $?
+}
+
+commandcfg()
+{
+    local CFGFILE=$1
+    shift
+    local COMMAND=$1
+    shift
+    local aftercommand=1
+    local ARGS="$@"
+    cat $CFGFILE | while read line; do
+	test -z "$line" && continue
+	case $line in
+	    '#command'*)
+		if [ "${line#'#command '}" = "$COMMAND" ]; then
+		    aftercommand=1
+		fi
+		;;
+	    '#menu'*|'#remove'*|'#install'*)
+		aftercommand=0
+		;;
+	    *)
+		if [ $aftercommand -eq 1 ]; then
+		    eval $line || return 1
+		fi
+		;;
+	esac
     done
     return $?
 }
@@ -556,8 +628,12 @@ case $DISTRO in
 	    fi
 	    if [ "$ARG" = "remove" -o "$ARG" = "purge" ]; then
 		removecfg $CFGFILE $ARG
-	    else
+	    elif [ -z "$ARG" ]; then
 		installcfg $CFGFILE
+	    else
+		shift
+		shift
+		commandcfg $CFGFILE $ARG $*
 	    fi
 	    ret=$?
 	    if [ -d $ISOMOUNTDIR ]; then
@@ -568,7 +644,7 @@ case $DISTRO in
 	    fi
 	    if [ "$ARG" = "remove" -o "$ARG" = "purge" ]; then
 		delboot $DISTRO
-	    else
+	    elif [ -z "$ARG" ]; then
 		addboot $DISTRO
 	    fi
 	else

@@ -1,4 +1,5 @@
 *.gz
+*.lz
 ./menu.lst
 ./boot.lst
 boot/boot.lst

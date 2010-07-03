@@ -1,0 +1,13 @@
+*** ./scripts/casper.org	2010-07-03 12:31:22.505467952 +0000
+--- ./scripts/casper	2010-07-03 12:33:34.133548548 +0000
+***************
+*** 56,61 ****
+--- 56,63 ----
+                  export TORAM="Yes" ;;
+              todisk=*)
+                  export TODISK="${x#todisk=}" ;;
++ 	    root_persistence=*)
++ 		export root_persistence="${x#root_persistence=}" ;;
+          esac
+      done
+      if [ "${UNIONFS}" = "" ]; then
