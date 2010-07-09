@@ -151,7 +151,7 @@ geninitrd()
     zcat $USBROOT/$SOURCE | cpio -i -H newc --no-absolute-filenames || return 1
     patch -p0 -i $USBROOT/$PATCH || return 1
     echo "Creating patched initrd"
-    find . | cpio --quiet --dereference -o -H newc | gzip - > $USBROOT/$DST
+    find . | cpio --quiet -o -H newc | gzip - > $USBROOT/$DST
     popd
     if [ ! -s $DST ]; then
 	echo "Fail to generate initrd."
@@ -180,7 +180,7 @@ geninitrd_lzma()
     lzma -dc -S .lz $USBROOT/$SOURCE | cpio -i -H newc --no-absolute-filenames || return 1
     patch -p0 -i $USBROOT/$PATCH || return 1
     echo "Creating patched initrd"
-    find . | cpio --quiet --dereference -o -H newc | gzip - > $USBROOT/$DST
+    find . | cpio --quiet -o -H newc | gzip - > $USBROOT/$DST
     popd
     if [ ! -s $DST ]; then
 	echo "Fail to generate initrd."
@@ -219,7 +219,7 @@ geninitrd_mount()
     patch -p0 -i $USBROOT/$PATCH || return 1
     echo "Creating patched initrd"
     if [ "$FORMAT" = "cpio" ]; then
-	find . | cpio -o -H newc | gzip - > $USBROOT/$DST
+	find . | cpio --quiet -o -H newc | gzip - > $USBROOT/$DST
     fi
     popd
     umount -v $INITRD_MOUNT || return 1
