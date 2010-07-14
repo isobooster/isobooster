@@ -27,26 +27,6 @@ prepareiso()
     fi
 }
 
-prepareiso4pmagic()
-{
-    local ISO=$1
-    local BASEURL=$2
-
-    if [ ! -r iso/$ISO ]; then
-	if [ -n "$BASEURL" ]; then
-	    mkdir -pv iso || return 1
-	    wget ${BASEURL}/${ISO}.zip -O iso/${ISO}.zip || return 1
-	    pushd iso
-	    unzip -v ${ISO}.zip || return 1
-	    rm -v ${ISO}.zip
-	    popd
-	else
-	    echo "$ISO is not exist."
-	    return 1
-	fi
-    fi
-}
-
 checksum()
 {
     local FILE=$1
@@ -162,6 +142,8 @@ geninitrd()
     rm -rf $WORK
 }
 
+# for Ubuntu
+
 geninitrd_lzma()
 {
     local DST=$2
@@ -216,15 +198,18 @@ geninitrd_mount()
     local LOOPDEV=$(losetup -f --show $WORK/$SOURCEFILE)
     mount -v $LOOPDEV $INITRD_MOUNT || return 1
     pushd $INITRD_MOUNT
-    patch -p0 -i $USBROOT/$PATCH || return 1
-    echo "Creating patched initrd"
-    if [ "$FORMAT" = "cpio" ]; then
+    patch -p0 -i $USBROOT/$PATCH
+    local PATCHRET=$?
+    if [ $PATCHRET -eq 0 -a "$FORMAT" = "cpio" ]; then
+	echo "Creating patched initrd cpio"
 	find . | cpio --quiet -o -H newc | gzip - > $USBROOT/$DST
     fi
     popd
     umount -v $INITRD_MOUNT || return 1
-    losetup -d $LOOPDEV
+    losetup -d $LOOPDEV || return 1
+    test $PATCHRET -ne 0 && return $PATCHRET
     if [ -z "$FORMAT" -o "$FORMAT" = "ext2" ]; then
+	echo "Creating patched initrd image"
 	gzip -c $WORK/$SOURCEFILE > $USBROOT/$DST || return 1
     fi
     if [ ! -s $USBROOT/$DST ]; then
@@ -337,6 +322,7 @@ genmenu()
     local aftermenu
     local grubver
     # generate menu file
+    echo -n "Generating boot menu."
     cat cfg/head.cfg > $MENUFILE
     cat cfg/head1.cfg > $MENU1FILE
     sort $BOOTFILE | while read line; do
@@ -381,12 +367,14 @@ genmenu()
 		esac
 	    done
 	    echo "" >> $MENUFILE
+	    echo -n "."
 	else
-	    echo "[warn] ignore ${line}"
+	    echo -n "[warn] ignore ${line}"
 	fi
     done
     cat cfg/tail.cfg >> $MENUFILE
     cat cfg/tail1.cfg >> $MENU1FILE
+    echo ""
     echo "Boot menu was updated."
 }
 
