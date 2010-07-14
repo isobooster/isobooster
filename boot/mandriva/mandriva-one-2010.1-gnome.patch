@@ -1,0 +1,30 @@
+*** ./linuxrc.org	2010-07-13 20:19:26.000000000 -0400
+--- ./linuxrc	2010-07-13 20:23:12.000000000 -0400
+***************
+*** 34,44 ****
+  probe-modules unionfs
+  probe-modules --cdrom
+  sh -c 'if grep -q initrd_debug /proc/cmdline; then plymouth --quit; exec sh </dev/console >/dev/console 2>/dev/console; fi'
+! for i in seq 1 5; do showlabels --removable | grep LABEL=One-2010S-GNOME; if [ $? -eq 0 ]; then break; fi; sleep 1; done
+  showlabels --removable
+! nash-mount -o ro -t iso9660 LABEL=One-2010S-GNOME /live/media
+! /bin/losetup /dev/loop0 /live/media/loopbacks/distrib-lzma.sqfs
+! nash-mount -o ro -t squashfs /dev/loop0 /live/distrib
+  mount -t tmpfs -o mode=755 /live/memory /live/memory
+  sh -c 'mount -o dirs=/live/memory=rw:/live/distrib=ro -t unionfs unionfs /live/union'
+  plymouth --newroot=/live/union
+--- 34,47 ----
+  probe-modules unionfs
+  probe-modules --cdrom
+  sh -c 'if grep -q initrd_debug /proc/cmdline; then plymouth --quit; exec sh </dev/console >/dev/console 2>/dev/console; fi'
+! for i in seq 1 5; do showlabels --removable | grep LABEL=MULTIBOOT; if [ $? -eq 0 ]; then break; fi; sleep 1; done
+  showlabels --removable
+! sh -c 'mkdir -p /isodevice'
+! nash-mount -o ro -t vfat LABEL=MULTIBOOT /isodevice
+! sh -c "ISO=$(cat /proc/cmdline | tr ' ' '\n' | grep 'fromiso=' | sed 's/fromiso=//'); echo Mounting ${ISO}; /bin/losetup /dev/loop0 /isodevice/$ISO"
+! nash-mount -o ro -t iso9660 /dev/loop0 /live/media
+! /bin/losetup /dev/loop1 /live/media/loopbacks/distrib-lzma.sqfs
+! nash-mount -o ro -t squashfs /dev/loop1 /live/distrib
+  mount -t tmpfs -o mode=755 /live/memory /live/memory
+  sh -c 'mount -o dirs=/live/memory=rw:/live/distrib=ro -t unionfs unionfs /live/union'
+  plymouth --newroot=/live/union

@@ -31,7 +31,7 @@ boot/grub
 boot/debian/vmlinuz-*
 boot/debian/initrd-*
 boot/slax
-./slax
+./slax-*
 boot/nimblex
 boot/lemmyos
 
