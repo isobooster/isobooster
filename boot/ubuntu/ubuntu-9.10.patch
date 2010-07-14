@@ -1,0 +1,13 @@
+*** ./scripts/casper.org	2010-07-14 11:12:57.000000000 -0700
+--- ./scripts/casper	2010-07-14 11:15:27.270267908 -0700
+***************
+*** 52,57 ****
+--- 52,59 ----
+                  LIVE_MEDIA_PATH="${x#live-media-path=}"
+                  export LIVE_MEDIA_PATH
+                  echo "export LIVE_MEDIA_PATH=\"$LIVE_MEDIA_PATH\"" >> /etc/casper.conf ;;
++ 	    root_persistence=*)
++ 		export root_persistence="${x#root_persistence=}" ;;
+          esac
+      done
+      if [ "${UNIONFS}" = "" ]; then

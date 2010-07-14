@@ -1,0 +1,13 @@
+*** ./scripts/casper.org	2010-07-14 11:16:50.000000000 -0700
+--- ./scripts/casper	2010-07-14 11:18:19.488638056 -0700
+***************
+*** 46,51 ****
+--- 46,53 ----
+                  export STATICIP ;;
+              ignore_uuid)
+                  IGNORE_UUID="Yes" ;;
++ 	    root_persistence=*)
++ 		export root_persistence="${x#root_persistence=}" ;;
+          esac
+      done
+      if [ "${UNIONFS}" = "" ]; then
