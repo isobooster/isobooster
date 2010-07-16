@@ -34,4 +34,6 @@ boot/slax
 ./slax-*
 boot/nimblex
 boot/lemmyos
+boot/opensolaris/unix-*
+boot/opensolaris/x86.*
 
