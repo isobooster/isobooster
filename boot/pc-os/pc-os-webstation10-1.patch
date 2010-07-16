@@ -1,0 +1,33 @@
+*** ./scripts/casper.org	2010-07-15 12:24:32.860682328 -0700
+--- ./scripts/casper	2010-07-15 12:47:58.079440792 -0700
+***************
+*** 52,57 ****
+--- 52,63 ----
+                  LIVE_MEDIA_PATH="${x#live-media-path=}"
+                  export LIVE_MEDIA_PATH
+                  echo "export LIVE_MEDIA_PATH=\"$LIVE_MEDIA_PATH\"" >> /etc/casper.conf ;;
++ 		iso-scan/filename=*)
++ 		ISOFILE="${x#iso-scan/filename=}"
++ 		echo "export ISOFILE=\"$ISOFILE\"" >> /etc/casper.conf ;;
++ 		root_persistence=*)
++ 		export root_persistence="${x#root_persistence=}" ;;
++ 		
+          esac
+      done
+      if [ "${UNIONFS}" = "" ]; then
+***************
+*** 519,524 ****
+--- 525,537 ----
+             ([ "$skip_uuid_check" ] || matches_uuid $mountpoint); then
+              echo $mountpoint
+              return 0
++ 	elif [ -n "$ISOFILE" -a -f "${mountpoint}/${ISOFILE#/}" ]; then
++ 	    mkdir -p /isodevice
++ 	    mount --move $mountpoint /isodevice
++ 	    LODEV=$(setup_loop "/isodevice/${ISOFILE#/}" "loop" "/sys/block/loop*")
++ 	    mount -t iso9660 -o ro "$LODEV" $mountpoint
++ 	    echo $mountpoint
++ 	    return 0
+          else
+              umount $mountpoint
+          fi
