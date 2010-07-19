@@ -105,8 +105,8 @@ copyfromiso()
 	mkdir -pv $(dirname $DST) || return 1
     fi
 
-    if [ -f $ISOMOUNTDIR/$FROM ]; then
-	cp -v $ISOMOUNTDIR/$FROM $DST || return 1
+    if [ -e $ISOMOUNTDIR/$FROM ]; then
+	cp -vr $ISOMOUNTDIR/$FROM $DST || return 1
     else
 	echo "Fail to copy ${FROM}."
 	return 1

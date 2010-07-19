@@ -1,19 +1,41 @@
-*** lib/svc/method/live-fs-root.org	Wed Jul 14 14:07:25 2010
---- lib/svc/method/live-fs-root	Wed Jul 14 16:39:38 2010
+*** lib/svc/method/live-fs-root.org	2010-07-18 05:48:37.056387000 -0700
+--- lib/svc/method/live-fs-root	2010-07-19 08:11:00.840843000 -0700
 ***************
-*** 206,211 ****
---- 206,219 ----
+*** 196,209 ****
+  	# For devices that do, attempt to mount them to see if the 
+  	# compressed /usr filesystem exists
+  
+! 	/sbin/listusb | while read dev rdev
+  	do
+! 		/usr/lib/fs/ufs/fstyp $rdev 2>&1 | grep "^ufs$"
+  		if [ $? -eq 0 ]
+  		then
+! 			/sbin/mount -F ufs -o nologging,noatime $dev /.cdrom || break
+! 			if [ -f /.cdrom/solaris.zlib ]
   			then
   				echo "" > /.liveusb
   				break
-+ 			elif [ -f /.cdrom/iso/osol-0906-x86.iso ]; then
-+ 				/sbin/umount -f $dev
-+ 				mkdir -p /isodevice
-+ 				/sbin/mount -o nologging,noatime $dev /isodevice
-+ 				LODEV=$(/usr/sbin/lofiadm -a /isodevice/iso/osol-0906-x86.iso)
-+ 				/sbin/mount -o nologging,noatime $LODEV /.cdrom
-+ 				echo "" > /.liveusb
-+ 				break
   			else
-  				/sbin/umount -f $dev
-  				continue
+--- 196,217 ----
+  	# For devices that do, attempt to mount them to see if the 
+  	# compressed /usr filesystem exists
+  
+! 	ISOFILE="ISO/osol-0906-x86.iso"
+! #	/sbin/listusb | while read dev rdev
+! 	devfsadm
+! 	ls /dev/dsk/*p* | while read dev
+  	do
+! 		/usr/lib/fs/pcfs/fstyp $dev 2>&1 | grep "^pcfs$"
+  		if [ $? -eq 0 ]
+  		then
+! 			echo "Trying mount $dev" >/dev/msglog
+! 			/sbin/mount -F pcfs $dev /mnt/isodevice || continue 
+! 			echo "Succeed to mount $dev" >/dev/msglog
+! 			if [ -f /mnt/isodevice/$ISOFILE ]
+  			then
++ 				echo "Mounting $ISOFILE in $dev" >/dev/msglog
++ 				/usr/sbin/lofiadm -a /mnt/isodevice/$ISOFILE /dev/lofi/2
++ 				/sbin/mount -F hsfs /dev/lofi/2 /.cdrom
+  				echo "" > /.liveusb
+  				break
+  			else
