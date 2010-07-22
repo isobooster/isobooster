@@ -34,8 +34,8 @@
 ! 			if [ -f /mnt/isodevice/$ISOFILE ]
   			then
 + 				echo "Mounting $ISOFILE in $dev" >/dev/msglog
-+ 				/usr/sbin/lofiadm -a /mnt/isodevice/$ISOFILE /dev/lofi/2
-+ 				/sbin/mount -F hsfs /dev/lofi/2 /.cdrom
++ 				/usr/sbin/lofiadm -a /mnt/isodevice/$ISOFILE /dev/lofi/3
++ 				/sbin/mount -F hsfs /dev/lofi/3 /.cdrom
   				echo "" > /.liveusb
   				break
   			else
