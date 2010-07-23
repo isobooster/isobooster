@@ -1,0 +1,41 @@
+*** ./lib/svc/method/live-fs-root.org	2008-07-11 20:52:52.000000000 -0700
+--- ./lib/svc/method/live-fs-root	2010-07-21 06:46:27.743248000 -0700
+***************
+*** 193,206 ****
+  	# For devices that do, attempt to mount them to see if the 
+  	# compressed /usr filesystem exists
+  
+! 	/sbin/listusb | while read dev rdev
+  	do
+! 		/usr/lib/fs/ufs/fstyp $rdev 2>&1 | grep "^ufs$"
+  		if [ $? -eq 0 ]
+  		then
+! 			/sbin/mount -F ufs -o nologging,noatime $dev /.cdrom || break
+! 			if [ -f /.cdrom/solaris.zlib ]
+  			then
+  				echo "" > /.liveusb
+  				break
+  			else
+--- 193,214 ----
+  	# For devices that do, attempt to mount them to see if the 
+  	# compressed /usr filesystem exists
+  
+! 	ISOFILE="ISO/belenix_0.7.1.iso"
+! #	/sbin/listusb | while read dev rdev
+! 	devfsadm
+! 	ls /dev/dsk/*p* | while read dev
+  	do
+! 		/usr/lib/fs/pcfs/fstyp $dev 2>&1 | grep "^pcfs$"
+  		if [ $? -eq 0 ]
+  		then
+! 			echo "Trying mount $dev" >/dev/msglog
+! 			/sbin/mount -F pcfs $dev /mnt/isodevice || continue 
+! 			echo "Succeed to mount $dev" >/dev/msglog
+! 			if [ -f /mnt/isodevice/$ISOFILE ]
+  			then
++ 				echo "Mounting $ISOFILE in $dev" >/dev/msglog
++ 				/usr/sbin/lofiadm -a /mnt/isodevice/$ISOFILE /dev/lofi/3
++ 				/sbin/mount -F hsfs /dev/lofi/3 /.cdrom
+  				echo "" > /.liveusb
+  				break
+  			else
