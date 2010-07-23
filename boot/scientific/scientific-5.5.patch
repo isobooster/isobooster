@@ -1,0 +1,40 @@
+*** ./liblinuxlive.org	2010-07-23 04:46:38.000000000 -0700
+--- ./liblinuxlive	2010-07-23 05:08:01.000000000 -0700
+***************
+*** 341,348 ****
+  	   mount_device $DEVICE $DIR
+  	   if [ $? -ne 0 ]; then continue; fi
+  	   # FOUND=`find $DIR -name livecd.sgn -type f | head -n 1`
+! 	   FOUND=`ls -A1d $DIR/livecd.sgn $DIR/*/livecd.sgn 2>/dev/null | head -n 1`
+! 	   if [ "$FOUND" = "" ]; then umount $DIR 2>/dev/null; rmdir $DIR 2>/dev/null
+  	   else dirname "$FOUND"; return 1; fi
+         done
+     else
+--- 341,354 ----
+  	   mount_device $DEVICE $DIR
+  	   if [ $? -ne 0 ]; then continue; fi
+  	   # FOUND=`find $DIR -name livecd.sgn -type f | head -n 1`
+! 	   if [ -n "$ISOFILE" -a -f "${DIR}/${ISOFILE#/}" ]; then
+! 	       ISODIR="/$1/isoloop"
+! 	       mkdir -p $ISODIR
+! 	       mount -t auto -o loop,ro "${DIR}/${ISOFILE#/}" $ISODIR >/dev/null 2>/dev/null && FOUND="${ISODIR}/livecd.sgn"
+! 	   else
+! 	       FOUND=`ls -A1d $DIR/livecd.sgn $DIR/*/livecd.sgn 2>/dev/null | head -n 1`
+! 	   fi
+! 	   if [ -z "$FOUND" ]; then umount $DIR 2>/dev/null; rmdir $DIR 2>/dev/null
+  	   else dirname "$FOUND"; return 1; fi
+         done
+     else
+*** ./linuxrc.org	2010-07-23 04:46:44.000000000 -0700
+--- ./linuxrc	2010-07-23 04:32:02.000000000 -0700
+***************
+*** 136,141 ****
+--- 136,143 ----
+  # USB and SATA kernel modules and repeat the find procedure again
+  echolog "looking for data modules"
+  
++ ISOFILE="`cmdline_value fromiso`"
++ 
+  # disable kernel warnings
+  PRINTK=`cat /proc/sys/kernel/printk`
+  echo "0" >/proc/sys/kernel/printk
