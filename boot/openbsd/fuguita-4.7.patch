@@ -1,0 +1,46 @@
+*** ./boottmp/rc.org	2010-07-29 21:03:54.000000000 -0700
+--- ./boottmp/rc	2010-07-29 21:25:34.000000000 -0700
+***************
+*** 132,137 ****
+--- 132,138 ----
+  saveIFS="$IFS"; IFS=','
+  set -- `sysctl -n hw.disknames`
+  IFS="$saveIFS"
++ ISOFILE="ISO/FuguIta-4.7-201005191.iso"
+  
+  for rdev in "$@"; do
+      disk=''
+***************
+*** 150,155 ****
+--- 151,164 ----
+                      fi
+                  fi
+                  umount /mnt
++ 	    elif mount -r /dev/${rdev}i /mnt 2>/dev/null ; then
++ 		if [ -f "/mnt/$ISOFILE" ]; then
++                     disk=" @${rdev}i"
++                     if [ X${def_rdev} = X ]; then
++                         def_rdev=${rdev}i
++                     fi
++ 		fi
++ 		umount /mnt
+              fi
+              ;;
+      esac
+***************
+*** 241,246 ****
+--- 250,263 ----
+      /sbin/mount -r /dev/${rdev} /sysmedia
+      /sysmedia/sbin/vnconfig ${vn_devname} /sysmedia/fuguita.ffsimg
+      /sbin/mount -r /dev/${vn_devname}a /fuguita
++ elif [ -f /fuguita/$ISOFILE ]; then
++     /sbin/umount /fuguita
++     /sbin/mount -r /dev/${rdev} /isodevice
++     vn_sysdev="svnd2"
++     /sbin/vnconfig ${vn_sysdev} /isodevice/$ISOFILE
++     /sbin/mount -r /dev/${vn_sysdev}a /sysmedia
++     /sbin/vnconfig ${vn_devname} /sysmedia/fuguita.ffsimg
++     /sbin/mount -r /dev/${vn_devname}a /fuguita
+  fi
+  
+  #-------------------------------
