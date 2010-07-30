@@ -1,0 +1,50 @@
+*** ./functions.org	2010-07-30 02:31:40.000000000 -0700
+--- ./functions	2010-07-30 02:32:32.000000000 -0700
+***************
+*** 198,203 ****
+--- 198,211 ----
+      /bin/losetup ${looppath} ${imgpath}
+      mount --ro -t squashfs ${looppath} ${mntpath}
+    ;;
++   iso)
++     insmodule isofs
++     insmodule loop max_loop=64
++     looppath=/dev/loop${LOOPNUM}
++     test -b ${looppath} || mknod ${looppath} b 7 ${LOOPNUM}
++     /bin/losetup ${looppath} ${imgpath}
++     mount --ro -t iso9660 ${looppath} ${mntpath}
++   ;;
+    dev|*)
+      mount --rw ${imgpath} ${mntpath} > /dev/null 2>&1
+      if test "$?" != "0" ; then
+*** ./init.org	2010-07-30 02:13:42.000000000 -0700
+--- ./init	2010-07-30 03:09:14.000000000 -0700
+***************
+*** 108,113 ****
+--- 108,116 ----
+  test -n "${DEBUG}" && echov "RAMIMG=${RAMIMG}"
+  confirm "ramimg=${RAMIMG}"
+  
++ ISOFILE="$(getbootparam 'fromiso')"
++ test -n "${DEBUG}" && echov "ISOFILE=${ISOFILE}"
++ 
+  ## profile mode?
+  if test -n "${PROFILE}" ; then
+    BLKS="$(getbootparam 'chkblks')"
+***************
+*** 279,284 ****
+--- 282,295 ----
+  	  found="yes"
+  	  echov "[Found]"
+  	  break
++ 	elif [ -f /media/${ISOFILE#/} ]; then
++ 	    mkdir -p /isodevice
++ 	    mount --move /media /isodevice
++ 	    mountimg /isodevice/${ISOFILE#/} /media iso && prevnum=$[LOOPNUM++]
++ 	    FOUNDDEV=${FROMDEV}
++ 	    found="yes"
++ 	    echov "[Found ISO]"
++ 	    break
+  	fi
+  	umount /media
+        fi
