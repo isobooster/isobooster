@@ -433,6 +433,12 @@ installgrub2()
 
     grub-install --no-floppy --root-directory=${USBROOT} --force $USBDEV || return 1
     grub-set-default --root-directory=${USBROOT} 0
+    local BASEFONT=/usr/share/fonts/X11/misc/7x14.pcf.gz
+    local DISTFONT=${USBROOT}/boot/themes/menufont.pf2
+    if [ -f $BASEFONT ]; then
+	grub-mkfont --output=$DISTFONT $BASEFONT
+    fi
+
     echo "Grub2 was installed."
 }
 

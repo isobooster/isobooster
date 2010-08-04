@@ -1,0 +1,74 @@
+*** ./linuxrc.org	2010-08-03 17:11:54.000000000 -0700
+--- ./linuxrc	2010-08-04 15:10:44.000000000 -0700
+***************
+*** 69,74 ****
+--- 69,99 ----
+    done
+  }
+  
++ boot_from_iso () {
++   progress 11000 "ISO Boot Device Detection"
++   ISODEVICE=/isodevice
++   mkdir -p $ISODEVICE
++   for i in 0 1 2 3 4 5 6 7 8 9 10 11 12 13 14 15 16 17 18 19 20 21 22 23 24; do
++       for dev in /dev/[hs]*[1-9]; do
++ 	  if [ -b "$dev" ]; then
++ 	      mount -o ro $dev $ISODEVICE || continue
++ 	      if [ -f "${ISODEVICE}/${ISOFILE#/}" ]; then
++ 		  CDROM=/cd
++ 		  mkdir -p $CDROM
++ 		  mount -o loop,ro "${ISODEVICE}/${ISOFILE#/}" $CDROM
++ 		  GEEXBOX="${CDROM}$ROOT_LOCATION"
++ 		  progress 11001 "Booting from: ${dev}/${ISOFILE#/}"
++ 		  break
++ 	      else
++ 		  umount $dev
++ 	      fi
++ 	  fi
++       done
++       [ -n "$GEEXBOX" ] && break
++       sleep 1
++   done
++ }
++ 
+  get_device_from_uuid () {
+    if test -e "/dev/disk/by-uuid/${UUID}"; then
+      BOOT_DEV_NAME=`ls -l /dev/disk/by-uuid/${UUID} | sed 's#.*\.\.\/##'`
+***************
+*** 97,102 ****
+--- 122,131 ----
+            BOOT=hdd
+            get_device_from_uuid
+            ;;
++ 	iso=*)
++ 	  export ISOFILE="${BOOT#iso=}"
++ 	  BOOT=iso
++ 	  ;;
+          *)
+            if [ "$BOOT" != cdrom -a "$BOOT" != nfs -a "$BOOT" != smb ]; then
+              BOOT_DEV=$BOOT
+***************
+*** 156,161 ****
+--- 185,193 ----
+    hdd)
+      boot_from_hdd
+      ;;
++   iso)
++     boot_from_iso
++     ;;
+  esac
+  
+  if test -n "$GEEXBOX" -a -r "$GEEXBOX"/bin.tar* ; then
+***************
+*** 210,215 ****
+--- 242,251 ----
+  if test "$INSTALLATOR" != yes; then
+    [ "$BOOT" = cdrom ] && umount $CDROM
+    [ "$BOOT" = hdd ] && umount $HDD
++   if [ "$BOOT" = iso ]; then
++       umount $CDROM
++       umount $ISODEVICE
++   fi
+  fi
+  
+  RUNLEVEL="geexbox"
