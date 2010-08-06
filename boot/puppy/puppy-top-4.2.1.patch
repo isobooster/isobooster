@@ -1,0 +1,94 @@
+*** ./init.org	2010-08-05 14:39:50.000000000 -0700
+--- ./init	2010-08-05 16:12:15.000000000 -0700
+***************
+*** 389,397 ****
+   #v2.22 improved folder name search, avoid false hits...
+   FND_MULTIFOLDER="`find /mnt/data -maxdepth 1 -mount -type d -name 20[0-9][0-9]-[0-9][0-9]-[0-9][0-9]-[0-9][0-9]-[0-9][0-9] | grep -v ' ' | sed -e 's%^/mnt/data%%g' | tr '\n' ' '`"
+   [ "$FND_MULTIFOLDER" != "" ] && echo "$ONEDEV $ONEFS $FND_MULTIFOLDER" >> /tmp/MULTIFOLDERS
+   #all written on one line...
+   echo -n "$ONEDEV $ONEFS " >> /tmp/PUPPYFILES
+!  echo "$FND_INITRDGZ $FND_PUPXXXSFS $FND_ZDRVSFS $FND_PUPSAVE2FS $FND_MULTIFOLDER $FND_FULLINSTALL $FND_SWAPFILEPUP" >> /tmp/PUPPYFILES
+   [ -f /mnt/data/SAVEMARK ] && PSAVEMARK="`cat /mnt/data/SAVEMARK`" #v3.97 partition# that has or will-have pup_save.
+   umntfunc /mnt/data
+  done
+--- 389,402 ----
+   #v2.22 improved folder name search, avoid false hits...
+   FND_MULTIFOLDER="`find /mnt/data -maxdepth 1 -mount -type d -name 20[0-9][0-9]-[0-9][0-9]-[0-9][0-9]-[0-9][0-9]-[0-9][0-9] | grep -v ' ' | sed -e 's%^/mnt/data%%g' | tr '\n' ' '`"
+   [ "$FND_MULTIFOLDER" != "" ] && echo "$ONEDEV $ONEFS $FND_MULTIFOLDER" >> /tmp/MULTIFOLDERS
++  FND_ISOFILE=""
++  [ -n "$fromiso" ] && FND_ISOFILE="`find /mnt/data -maxdepth 2 -xdev -type f -name $(basename $fromiso) | grep -v ' ' | sed -e 's%^/mnt/data%%g' | tr '\n' ' '`"
++  if [ -n "$FND_ISOFILE" -a -z "$FND_PUPXXXSFS" ]; then
++      FND_PUPXXXSFS="/pup_${PUPPYVERSION}.sfs"
++  fi
+   #all written on one line...
+   echo -n "$ONEDEV $ONEFS " >> /tmp/PUPPYFILES
+!  echo "$FND_INITRDGZ $FND_PUPXXXSFS $FND_ZDRVSFS $FND_PUPSAVE2FS $FND_MULTIFOLDER $FND_FULLINSTALL $FND_SWAPFILEPUP $FND_ISOFILE" >> /tmp/PUPPYFILES
+   [ -f /mnt/data/SAVEMARK ] && PSAVEMARK="`cat /mnt/data/SAVEMARK`" #v3.97 partition# that has or will-have pup_save.
+   umntfunc /mnt/data
+  done
+***************
+*** 422,427 ****
+--- 427,436 ----
+   PUPPYFILES="`cat /tmp/PUPPYFILES`" #v3.91
+  fi
+  
++ if [ -n "$fromiso" ]; then
++  ISOFILEFS=$(grep "$(basename $fromiso)" /tmp/PUPPYFILES)
++ fi
++ 
+  if [ ! "$PDEV1" ];then
+   #note, if 'psubdir' defined, PDEV1 already found above.
+   #if only one line in /tmp/PUPPYFILES has initrd.gz then that must be the boot partition...
+***************
+*** 1041,1047 ****
+    PUPSFSDEVMNTPT="`mount | grep "$PPATTERN" | cut -f 3 -d ' '`"
+    if [ "$PUPSFSDEVMNTPT" = "" ];then
+     MOUNTOPT=	;echo  $PUPSFSFS | grep -q 'vfat' && MOUNTOPT="-o shortname=mixed,quiet,iocharset=utf8"
+!    mntfunc -t $PUPSFSFS $MOUNTOPT /dev/$PUPSFSDEV /mnt/dev_ro2
+     PUPSFSDEVMNTPT="/mnt/dev_ro2"
+     UMOUNTME="/mnt/dev_ro2" #mark for unmounting.
+    fi
+--- 1050,1065 ----
+    PUPSFSDEVMNTPT="`mount | grep "$PPATTERN" | cut -f 3 -d ' '`"
+    if [ "$PUPSFSDEVMNTPT" = "" ];then
+     MOUNTOPT=	;echo  $PUPSFSFS | grep -q 'vfat' && MOUNTOPT="-o shortname=mixed,quiet,iocharset=utf8"
+!    if [ -n "$ISOFILEFS" ]; then
+!        echo "Mounting /dev/${PUPSFSDEV}/${fromiso#/}"
+!        mkdir -p /mnt/dev_ro3
+!        mntfunc -t $PUPSFSFS $MOUNTOPT /dev/$PUPSFSDEV /mnt/dev_ro3
+!        LODEV="/dev/loop4"
+!        losetup $LODEV /mnt/dev_ro3/${fromiso#/}
+!        mntfunc -t iso9660 $LODEV /mnt/dev_ro2
+!    else
+!      mntfunc -t $PUPSFSFS $MOUNTOPT /dev/$PUPSFSDEV /mnt/dev_ro2
+!    fi
+     PUPSFSDEVMNTPT="/mnt/dev_ro2"
+     UMOUNTME="/mnt/dev_ro2" #mark for unmounting.
+    fi
+***************
+*** 1159,1165 ****
+    done
+    UMNTRO="" ; EXTRASFSLIST=""
+    if [ -f /tmp/EXTRASFSS ];then
+!    CNTLOOP=4
+     for ONEEXTRA in `cat /tmp/EXTRASFSS | tr '\n' ' '`
+     do
+      ONEBASE="`basename $ONEEXTRA`"
+--- 1177,1183 ----
+    done
+    UMNTRO="" ; EXTRASFSLIST=""
+    if [ -f /tmp/EXTRASFSS ];then
+!    CNTLOOP=5
+     for ONEEXTRA in `cat /tmp/EXTRASFSS | tr '\n' ' '`
+     do
+      ONEBASE="`basename $ONEEXTRA`"
+***************
+*** 1376,1381 ****
+--- 1394,1400 ----
+  mkdir -p /pup_new/initrd/mnt/data
+  mkdir -p /pup_new/initrd/mnt/dev_ro1
+  mkdir -p /pup_new/initrd/mnt/dev_ro2
++ mkdir -p /pup_new/initrd/mnt/dev_ro3
+  mkdir -p /pup_new/initrd/mnt/dev_save
+  mkdir -p /pup_new/initrd/mnt/swap
+  mkdir -p /pup_new/initrd/mnt/tmpfs

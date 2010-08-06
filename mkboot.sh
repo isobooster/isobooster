@@ -77,7 +77,7 @@ mountiso()
 	umountiso || return 1
     fi
     mkdir -pv $ISOMOUNTDIR || return 1
-    mount -v -o loop -t iso9660 iso/$ISO $ISOMOUNTDIR || return 1
+    mount -v -o loop -t iso9660 $USBROOT/iso/$ISO $ISOMOUNTDIR || return 1
 }
 
 umountiso()
@@ -120,25 +120,30 @@ geninitrd()
     local SOURCE=$1
     local WORK=$WORKROOT/initrd-work
 
-    # remove first /
-    test -z "${DST%%/*}" && DST="${DST#/}"
-    test -z "${PATCH%%/*}" && PATCH="${PATCH#/}"
-    test -z "${SOURCE%%/*}" && SOURCE="${SOURCE#/}"
-
     rm -rf $WORK
     mkdir -pv $WORK
     pushd $WORK
-    zcat $USBROOT/$SOURCE | cpio -i -H newc --no-absolute-filenames || return 1
-    patch -p0 -i $USBROOT/$PATCH || return 1
-    echo "Creating patched initrd"
-    find . | cpio --quiet -o -H newc | gzip - > $USBROOT/$DST
+    if [ -z "${SOURCE%%@iso*}" -a -n "$ISOFILE" ]; then
+	if [ ! -d $ISOMOUNTDIR ]; then
+	    mountiso $ISOFILE || return 1
+	fi
+	SOURCE="${ISOMOUNTDIR}${SOURCE#@iso}"
+    else
+	SOURCE=$USBROOT/${SOURCE#/}
+    fi
+    echo "Extracting initrd."
+    zcat $SOURCE | cpio -i -H newc --no-absolute-filenames || return 1
+    patch -p0 -i $USBROOT/${PATCH#/} || return 1
+    echo "Creating patched initrd."
+    find . | cpio --quiet -o -H newc | gzip - > $USBROOT/${DST#/}
     popd
-    if [ ! -s $DST ]; then
+    if [ ! -s $USBROOT/${DST#/} ]; then
 	echo "Fail to generate initrd."
 	return 1
     else
 	echo "$DST was generated."
     fi
+    echo "Deleting working folder."
     rm -rf $WORK
 }
 
@@ -151,20 +156,24 @@ geninitrd_lzma()
     local SOURCE=$1
     local WORK=$WORKROOT/initrd-work
 
-    # remove first /
-    test -z "${DST%%/*}" && DST="${DST#/}"
-    test -z "${PATCH%%/*}" && PATCH="${PATCH#/}"
-    test -z "${SOURCE%%/*}" && SOURCE="${SOURCE#/}"
-
     rm -rf $WORK
     mkdir -pv $WORK
     pushd $WORK
-    lzma -dc -S .lz $USBROOT/$SOURCE | cpio -i -H newc --no-absolute-filenames || return 1
-    patch -p0 -i $USBROOT/$PATCH || return 1
-    echo "Creating patched initrd"
-    find . | cpio --quiet -o -H newc | gzip - > $USBROOT/$DST
+    if [ -z "${SOURCE%%@iso*}" -a -n "$ISOFILE" ]; then
+	if [ ! -d $ISOMOUNTDIR ]; then
+	    mountiso $ISOFILE || return 1
+	fi
+	SOURCE="${ISOMOUNTDIR}${SOURCE#@iso}"
+    else
+	SOURCE=$USBROOT/${SOURCE#/}
+    fi
+    echo "Extracting initrd."
+    lzcat -S .${SOURCE##*.} $SOURCE | cpio -i -H newc --no-absolute-filenames || return 1
+    patch -p0 -i $USBROOT/${PATCH#/} || return 1
+    echo "Creating patched initrd."
+    find . | cpio --quiet -o -H newc | lzma -cz - > $USBROOT/${DST#/}
     popd
-    if [ ! -s $DST ]; then
+    if [ ! -s $USBROOT/${DST#/} ]; then
 	echo "Fail to generate initrd."
 	return 1
     else
@@ -182,15 +191,19 @@ geninitrd_mount()
     local WORK=$WORKROOT/initrd-work
     local INITRD_MOUNT=/mnt/initrd
 
-    # remove first /
-    test -z "${DST%%/*}" && DST="${DST#/}"
-    test -z "${PATCH%%/*}" && PATCH="${PATCH#/}"
-    test -z "${SOURCE%%/*}" && SOURCE="${SOURCE#/}"
     local SOURCEFILE=$(basename $SOURCE)
 
     rm -rf $WORK
     mkdir -pv $WORK $INITRD_MOUNT || return 1
-    cp -v $USBROOT/$SOURCE $WORK || return 1
+    if [ -z "${SOURCE%%@iso*}" -a -n "$ISOFILE" ]; then
+	if [ ! -d $ISOMOUNTDIR ]; then
+	    mountiso $ISOFILE || return 1
+	fi
+	SOURCE="${ISOMOUNTDIR}${SOURCE#@iso}"
+    else
+	SOURCE=$USBROOT/${SOURCE#/}
+    fi
+    cp -v $SOURCE $WORK || return 1
     if [ ! "${SOURCEFILE%%.gz}" = "$SOURCEFILE" ]; then
 	gunzip $WORK/$SOURCEFILE || return 1
 	SOURCEFILE="${SOURCEFILE%%.gz}"
@@ -198,11 +211,11 @@ geninitrd_mount()
     local LOOPDEV=$(losetup -f --show $WORK/$SOURCEFILE)
     mount -v $LOOPDEV $INITRD_MOUNT || return 1
     pushd $INITRD_MOUNT
-    patch -p0 -i $USBROOT/$PATCH
+    patch -p0 -i $USBROOT/${PATCH#/}
     local PATCHRET=$?
     if [ $PATCHRET -eq 0 -a "$FORMAT" = "cpio" ]; then
 	echo "Creating patched initrd cpio"
-	find . | cpio --quiet -o -H newc | gzip - > $USBROOT/$DST
+	find . | cpio --quiet -o -H newc | gzip - > $USBROOT/${DST#/}
     fi
     popd
     umount -v $INITRD_MOUNT || return 1
@@ -210,9 +223,9 @@ geninitrd_mount()
     test $PATCHRET -ne 0 && return $PATCHRET
     if [ -z "$FORMAT" -o "$FORMAT" = "ext2" ]; then
 	echo "Creating patched initrd image"
-	gzip -c $WORK/$SOURCEFILE > $USBROOT/$DST || return 1
+	gzip -c $WORK/$SOURCEFILE > $USBROOT/${DST#/} || return 1
     fi
-    if [ ! -s $USBROOT/$DST ]; then
+    if [ ! -s $USBROOT/${DST#/} ]; then
 	echo "Fail to generate initrd."
 	return 1
     else
@@ -235,24 +248,28 @@ geninitrd_cramfs()
 	return 1
     fi
 
-    # remove first /
-    test -z "${DST%%/*}" && DST="${DST#/}"
-    test -z "${PATCH%%/*}" && PATCH="${PATCH#/}"
-    test -z "${SOURCE%%/*}" && SOURCE="${SOURCE#/}"
     local SOURCEFILE=$(basename $SOURCE)
 
     rm -rf $WORK
     mkdir -pv $WORK $INITRD_MOUNT || return 1
-    mount -v -o loop -t cramfs $USBROOT/$SOURCE $INITRD_MOUNT || return 1
+    if [ -z "${SOURCE%%@iso*}" -a -n "$ISOFILE" ]; then
+	if [ ! -d $ISOMOUNTDIR ]; then
+	    mountiso $ISOFILE || return 1
+	fi
+	SOURCE="${ISOMOUNTDIR}${SOURCE#@iso}"
+    else
+	SOURCE=$USBROOT/${SOURCE#/}
+    fi
+    mount -v -o loop -t cramfs $SOURCE $INITRD_MOUNT || return 1
     echo "Copying initrd files."
     cp -ar ${INITRD_MOUNT}/* $WORK
     umount -v $INITRD_MOUNT || return 1
     pushd $WORK
-    patch -p0 -i $USBROOT/$PATCH || return 1
+    patch -p0 -i $USBROOT/${PATCH#/} || return 1
     echo "Creating patched initrd."
-    mkcramfs . $USBROOT/$DST || return 1
+    mkcramfs . $USBROOT/${DST#/} || return 1
     popd
-    if [ ! -s $DST ]; then
+    if [ ! -s $USBROOT/${DST#/} ]; then
 	echo "Fail to generate initrd."
 	return 1
     else
@@ -288,11 +305,11 @@ addboot()
     if [ ! -f $BOOTFILE ]; then
 	touch $BOOTFILE || return 1
     fi
-    if [ -z $(grep "${BOOT}\$" $BOOTFILE) ]; then
+    if grep "^${BOOT}\$" $BOOTFILE >/dev/null; then
+	echo "$BOOT is already installed."
+    else
 	echo "$BOOT" >> $BOOTFILE
 	echo "$BOOT was added to boot list."
-    else
-	echo "$BOOT is already installed."
     fi
     genmenu
 }
