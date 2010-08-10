@@ -1,0 +1,53 @@
+*** ./etc/mountcd.sh.org	2010-08-10 15:00:17.000000000 -0700
+--- ./etc/mountcd.sh	2010-08-10 15:09:22.000000000 -0700
+***************
+*** 82,87 ****
+--- 82,88 ----
+  echow "TRK not found on CD, checking harddisks and USB sticks (sleep 5 secs let them settle in)"
+  sleep 5
+  TRKLABEL=`cat /proc/cmdline | tr " " "\n" | grep -i vollabel | cut -d "=" -f 2`
++ ISOFILE=$(cat /proc/cmdline | tr " " "\n" | grep -i fromiso | cut -d "=" -f 2)
+  if [ r$TRKLABEL == r ]; then TRKLABEL="TRK_3-3"; fi
+  export hddrives=`cat /proc/partitions | awk '{print $4}' | dd bs=1 skip=6 2>/dev/null`
+  for h in $hddrives; do
+***************
+*** 102,114 ****
+  if [ -s /etc/trkhd ]; then
+   if [ "$TRKMOUNTDIR" = "/trktmp" ]; then
+   echow "TRK 3.3 found on writable storage /dev/$TRKHD, copy files in memory, will unmount/detach your drive later" 
+!  mount -t vfat /dev/$TRKHD /trktmp	 
+   mkdir /dev/shm/trkinmem && \
+   cp -a $TRKMOUNTDIR/trk3/trkramfs /dev/shm/trkinmem/
+   mount -o loop /dev/shm/trkinmem/trkramfs /linkedfs/
+   exit 0
+   else 
+!  mount -t vfat /dev/$TRKHD /trk 
+   echow "TRK 3.3 found on writable storage /dev/$TRKHD, attaching additional files (do not unplug this drive!)"
+   mount -o loop /trk/trk3/trkramfs /linkedfs/
+   exit 0
+--- 103,127 ----
+  if [ -s /etc/trkhd ]; then
+   if [ "$TRKMOUNTDIR" = "/trktmp" ]; then
+   echow "TRK 3.3 found on writable storage /dev/$TRKHD, copy files in memory, will unmount/detach your drive later" 
+!  if [ -n "$ISOFILE" ]; then
+!   mkdir -p /isodevice
+!   mount -t vfat /dev/$TRKHD /isodevice
+!   mount -o loop /isodevice/${ISOFILE#/} /trktmp
+!  else
+!   mount -t vfat /dev/$TRKHD /trktmp	 
+!  fi
+   mkdir /dev/shm/trkinmem && \
+   cp -a $TRKMOUNTDIR/trk3/trkramfs /dev/shm/trkinmem/
+   mount -o loop /dev/shm/trkinmem/trkramfs /linkedfs/
+   exit 0
+   else 
+!  if [ -n "$ISOFILE" ]; then
+!   mkdir -p /isodevice
+!   mount -t vfat /dev/$TRKHD /isodevice
+!   mount -o loop /isodevice/${ISOFILE#/} /trk
+!  else
+!   mount -t vfat /dev/$TRKHD /trk 
+!  fi
+   echow "TRK 3.3 found on writable storage /dev/$TRKHD, attaching additional files (do not unplug this drive!)"
+   mount -o loop /trk/trk3/trkramfs /linkedfs/
+   exit 0

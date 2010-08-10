@@ -140,23 +140,29 @@ geninitrd()
     mkdir -pv $WORK
 
     case "${SRCFORMAT%:*}" in
-	ext*)
-	    # ext2/3 format
-	    cp -v $SOURCE $WORK || return 1
+	ext*|ufs)
 	    # decompress
 	    case "${SRCFORMAT#*:}" in
 		gz)
-		    gunzip -v $WORK/$SOURCEFILE || return 1
-		    SOURCEFILE="${SOURCEFILE%.*}"
+		    echo "Decompressing initrd."
+		    zcat -q $SOURCE > $WORK/initrd
+		    [ ! -s $WORK/initrd ] && return 1
+		    SOURCEFILE="initrd"
 		    ;;
 		lzma)
-		    lzma -dv -S .${SOURCEFILE##*.} $WORK/$SOURCEFILE || return 1
-		    SOURCEFILE="${SOURCEFILE%.*}"
+		    echo "Decompressing initrd."
+		    lzcat -q -S .${SOURCEFILE##*.} $SOURCE > $WORK/initrd
+		    [ ! -s $WORK/initrd ] && return 1
+		    SOURCEFILE="initrd"
+		    ;;
+		*)
+		    # just copy the file
+		    cp -v $SOURCE $WORK || return 1
 		    ;;
 	    esac
 	    echo "Mounting initrd."
 	    mkdir -pv $INITRD_MOUNTDIR || return 1
-	    mount -o loop -t auto $WORK/$SOURCEFILE $INITRD_MOUNTDIR || return 1
+	    mount -o loop -t ${SRCFORMAT%:*} $WORK/$SOURCEFILE $INITRD_MOUNTDIR || return 1
 	    pushd $INITRD_MOUNTDIR
 	    ;;
 
@@ -166,10 +172,10 @@ geninitrd()
 	    local CPIOOPT="-i -H newc --no-absolute-filenames"
 	    case "${SRCFORMAT#*:}" in
 		gz)
-		    zcat $SOURCE | cpio $CPIOOPT || return 1
+		    zcat -q $SOURCE | cpio $CPIOOPT || return 1
 		    ;;
 		lzma)
-		    lzcat -S .${SOURCEFILE##*.} $SOURCE | cpio $CPIOOPT || return 1
+		    lzcat -q -S .${SOURCEFILE##*.} $SOURCE | cpio $CPIOOPT || return 1
 		    ;;
 	    esac
 	    ;;
@@ -201,7 +207,7 @@ geninitrd()
     fi
 
     case "${DSTFORMAT%:*}" in
-	ext*)
+	ext*|ufs)
 	    echo "Creating patched initrd."
 	    popd
 	    umount -v $INITRD_MOUNTDIR || return 1
