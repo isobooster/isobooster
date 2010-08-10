@@ -1,0 +1,29 @@
+*** ./scripts/casper.org	2010-08-05 22:34:38.000000000 -0700
+--- ./scripts/casper	2010-08-10 16:12:37.000000000 -0700
+***************
+*** 56,61 ****
+--- 56,63 ----
+                  export TORAM="Yes" ;;
+              todisk=*)
+                  export TODISK="${x#todisk=}" ;;
++ 		root_persistence=*)
++ 		export root_persistence="${x#root_persistence=}" ;;
+          esac
+      done
+      if [ "${UNIONFS}" = "" ]; then
+***************
+*** 524,529 ****
+--- 526,538 ----
+             ([ "$skip_uuid_check" ] || matches_uuid $mountpoint); then
+              echo $mountpoint
+              return 0
++ 	elif [ -n "$LOOP" -a -f "${mountpoint}/${LOOP#/}" ]; then
++ 	    mkdir -p /isodevice
++ 	    mount --move $mountpoint /isodevice
++ 	    LODEV=$(setup_loop "/isodevice/${LOOP#/}" "loop" "/sys/block/loop*")
++ 	    mount -t iso9660 -o ro "$LODEV" $mountpoint
++ 	    echo $mountpoint
++ 	    return 0
+          else
+              umount $mountpoint
+          fi
