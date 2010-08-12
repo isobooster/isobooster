@@ -1,0 +1,33 @@
+*** ./scripts/casper.org	2010-08-11 23:18:57.000000000 -0700
+--- ./scripts/casper	2010-08-11 23:32:21.000000000 -0700
+***************
+*** 46,51 ****
+--- 46,57 ----
+                  export STATICIP ;;
+              ignore_uuid)
+                  IGNORE_UUID="Yes" ;;
++ 		iso-scan/filename=*)
++ 		ISOFILE="${x#iso-scan/filename=}"
++ 		;;
++ 		root_persistence=*)
++ 		root_persistence="${x#root_persistence=}"
++ 		;;
+          esac
+      done
+      if [ "${UNIONFS}" = "" ]; then
+***************
+*** 469,474 ****
+--- 475,487 ----
+             ([ "$skip_uuid_check" ] || matches_uuid $mountpoint); then
+              echo $mountpoint
+              return 0
++ 	elif [ -n "$ISOFILE" -a -f $mountpoint/${ISOFILE#/} ]; then
++ 	    mkdir -p /isodevice
++ 	    mount --move $mountpoint /isodevice
++ 	    LODEV=$(setup_loop "/isodevice/${ISOFILE#/}" "loop" "/sys/block/loop*")
++ 	    mount -t iso9660 $LODEV $mountpoint
++ 	    echo $mountpoint
++ 	    return 0
+          else
+              umount $mountpoint
+          fi
