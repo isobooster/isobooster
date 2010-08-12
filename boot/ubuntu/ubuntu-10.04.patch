@@ -1,13 +1,38 @@
-*** ./scripts/casper.org	2010-07-03 12:31:22.505467952 +0000
---- ./scripts/casper	2010-07-03 12:33:34.133548548 +0000
+*** ./scripts/casper.org	2010-07-28 20:29:40.000000000 -0700
+--- ./scripts/casper	2010-08-12 11:20:15.000000000 -0700
 ***************
 *** 56,61 ****
---- 56,63 ----
+--- 56,65 ----
                   export TORAM="Yes" ;;
               todisk=*)
                   export TODISK="${x#todisk=}" ;;
 + 	    root_persistence=*)
 + 		export root_persistence="${x#root_persistence=}" ;;
++ 	    update-path=*)
++ 		export UPDATE_PATH="${x#update-path=}" ;;
           esac
       done
       if [ "${UNIONFS}" = "" ]; then
+***************
+*** 409,414 ****
+--- 413,432 ----
+              fi
+          done
+      done
++     # try to find update squashfs
++     if [ -n "$UPDATE_PATH" -a -d "/isodevice/${UPDATE_PATH#/}" ]; then
++ 	echo "Update directory is found: /isodevice/${UPDATE_PATH#/}"
++ 	# mount squashfs
++         for image in /isodevice/${UPDATE_PATH#/}/*.squashfs; do
++ 	    imagename=$(basename "${image}")
++ 	    if [ -f "${image}" ]; then
++                 backdev=$(get_backing_device "$image")
++                 fstype=$(get_fstype "${backdev}")
++                 mkdir -p "${croot}/${imagename}"
++                 mount -v -t "${fstype}" -o ro,noatime "${backdev}" "${croot}/${imagename}" || panic "Can not mount $backdev ($image) on ${croot}/${imagename}" && rofsstring="${croot}/${imagename}=${roopt}:${rofsstring}" && rofslist="${croot}/${imagename} ${rofslist}"
++ 	    fi
++         done
++     fi
+      rofsstring=${rofsstring%:}
+  
+      mkdir -p /cow
