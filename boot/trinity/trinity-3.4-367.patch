@@ -1,0 +1,55 @@
+*** ./etc/mountcd.sh.org	2010-08-20 11:34:17.000000000 -0700
+--- ./etc/mountcd.sh	2010-08-20 11:37:43.000000000 -0700
+***************
+*** 11,16 ****
+--- 11,17 ----
+  # Check cd-rom drives in /proc/sys/dev/cdrom/info
+  TRKLABEL=`cat /proc/cmdline | tr " " "\n" | grep -i vollabel | cut -d "=" -f 2`
+  if [ r$TRKLABEL == r ]; then TRKLABEL=TRK_3.4; fi
++ ISOFILE=$(cat /proc/cmdline | tr " " "\n" | grep -i fromiso | cut -d "=" -f 2)
+  cdcount=`grep name /proc/sys/dev/cdrom/info | wc -w`
+  cdcount=$[$cdcount-2]
+  echow "Trying to find TRK on your $cdcount CD-drive(s)"
+***************
+*** 132,145 ****
+  if [ -s /etc/trkhd ]; then
+   if [ "$TRKMOUNTDIR" = "/trktmp" ]; then
+   echow "TRK 3.4 found on writable storage /dev/$TRKHD, copy files in memory, will unmount/detach your drive later" 
+!  mount -t vfat /dev/$TRKHD /trktmp	 
+   mkdir /dev/shm/trkinmem && \
+   cp -a $TRKMOUNTDIR/trk3/trkramfs /dev/shm/trkinmem/
+   mount -t squashfs -o loop,ro /dev/shm/trkinmem/trkramfs /linkedfs-ro/
+   MountTrkRW
+   exit 0
+   else 
+!  mount -t vfat /dev/$TRKHD /trk 
+   echow "TRK 3.4 found on writable storage /dev/$TRKHD, attaching additional files (do not unplug this drive!)"
+   mount -t squashfs -o loop,ro /trk/trk3/trkramfs /linkedfs-ro/
+   MountTrkRW
+--- 133,158 ----
+  if [ -s /etc/trkhd ]; then
+   if [ "$TRKMOUNTDIR" = "/trktmp" ]; then
+   echow "TRK 3.4 found on writable storage /dev/$TRKHD, copy files in memory, will unmount/detach your drive later" 
+!  if [ -n "$ISOFILE" ]; then
+!   mkdir -p /isodevice
+!   mount -t vfat /dev/$TRKHD /isodevice
+!   mount -o loop /isodevice/${ISOFILE#/} /trktmp
+!  else
+!   mount -t vfat /dev/$TRKHD /trktmp
+!  fi
+   mkdir /dev/shm/trkinmem && \
+   cp -a $TRKMOUNTDIR/trk3/trkramfs /dev/shm/trkinmem/
+   mount -t squashfs -o loop,ro /dev/shm/trkinmem/trkramfs /linkedfs-ro/
+   MountTrkRW
+   exit 0
+   else 
+!  if [ -n "$ISOFILE" ]; then
+!   mkdir -p /isodevice
+!   mount -t vfat /dev/$TRKHD /isodevice
+!   mount -o loop /isodevice/${ISOFILE#/} /trk
+!  else
+!   mount -t vfat /dev/$TRKHD /trk
+!  fi
+   echow "TRK 3.4 found on writable storage /dev/$TRKHD, attaching additional files (do not unplug this drive!)"
+   mount -t squashfs -o loop,ro /trk/trk3/trkramfs /linkedfs-ro/
+   MountTrkRW

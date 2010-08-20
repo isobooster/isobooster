@@ -127,6 +127,11 @@ geninitrd()
     [ -z "$SRCFORMAT" ] && SRCFORMAT="cpio:gz"
     [ -z "$DSTFORMAT" ] && DSTFORMAT="cpio:gz"
 
+    if [ -d $INITRD_MOUNTDIR ]; then
+	umount $INITRD_MOUNTDIR || true
+	rmdir -v $INITRD_MOUNTDIR || return 1
+    fi
+
     if [ -z "${SOURCE%%@iso*}" -a -n "$ISOFILE" ]; then
 	if [ ! -d $ISOMOUNTDIR ]; then
 	    mountiso $ISOFILE || return 1
