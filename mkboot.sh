@@ -593,31 +593,6 @@ case $DISTRO in
 	genmenu
 	;;
 
-    create-casper)
-	if [ -f casper-rw ]; then
-	    echo "casper-rw is exist."
-	    exit 1
-	fi
-	SIZE=${2:-1024}
-	dd if=/dev/zero of=casper-rw bs=1M count=$SIZE || exit 1
-	mkfs.ext3 -j -F casper-rw || exit 1
-	echo "casper-rw was created."
-	;;
-
-    create-fedora-home)
-	LIVE_DIR=LiveOS
-	HOME_FILE=home.img
-	if [ -f ${LIVE_DIR}/${HOME_FILE} ]; then
-	    echo "Home file is exist."
-	    exit 1
-	fi
-	SIZE=${2:-1024}
-	mkdir -pv ${LIVE_DIR}
-	dd if=/dev/zero of=${LIVE_DIR}/${HOME_FILE} bs=1M count=$SIZE || exit 1
-	mkfs.ext3 -j -F ${LIVE_DIR}/${HOME_FILE} || exit 1
-	echo "Home file was created."
-	;;
-
     # for development
     genpatch)
 	PATCH=$2
