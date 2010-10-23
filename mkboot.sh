@@ -523,6 +523,8 @@ commandcfg()
 	    '#command'*)
 		if [ "${line#'#command '}" = "$COMMAND" ]; then
 		    aftercommand=1
+		else
+		    aftercommand=0
 		fi
 		;;
 	    '#menu'*|'#remove'*|'#install'*)
