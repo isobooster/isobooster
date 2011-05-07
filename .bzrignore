@@ -16,3 +16,5 @@ boot/boot.lst
 boot/gobo/initrd-*
 boot/grub
 ./slax-*
+./overlay-*
+
