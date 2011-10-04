@@ -1,0 +1,80 @@
+*** ./sbin/dmsquash-live-root.org	2011-10-05 01:51:52.000000000 +0900
+--- ./sbin/dmsquash-live-root	2011-10-05 02:44:37.000000000 +0900
+***************
+*** 43,63 ****
+  getarg rw && liverw=rw
+  [ -z "$liverw" ] && liverw=ro
+  # mount the backing of the live image first
+  mkdir -m 0755 -p /run/initramfs/live
+! if [ -f $livedev ]; then
+      # no mount needed - we've already got the LiveOS image in initramfs
+!     case $livedev in
+!         *squashfs.img) SQUASHED=$livedev ;;
+!         *ext3fs.img|*rootfs.img) FSIMG=$livedev ;;
+!     esac
+! else
+      mount -n -t $fstype -o $liverw $livedev /run/initramfs/live
+      RES=$?
+      if [ "$RES" != "0" ]; then
+          die "Failed to mount block device of live image"
+          exit 1
+      fi
+! fi
+  
+  # overlay setup helper function
+  do_live_overlay() {
+--- 43,74 ----
+  getarg rw && liverw=rw
+  [ -z "$liverw" ] && liverw=ro
+  # mount the backing of the live image first
++ isofile=$(getarg iso-scan/filename)
++ if [ -n $isofile ]; then
++     mkdir -p /liveiso
++     liveisodev=$livedev
++     liveisorw=$liverw
++     liveisofstype=$fstype
++     mount -n -t $liveisofstype -o $liveisorw $liveisodev /liveiso
++     livedev="/liveiso/$isofile"
++     liverw="loop,ro"
++     fstype="iso9660"
++ fi
+  mkdir -m 0755 -p /run/initramfs/live
+! #if [ -f $livedev ]; then
+      # no mount needed - we've already got the LiveOS image in initramfs
+! #    case $livedev in
+! #        *squashfs.img) SQUASHED=$livedev ;;
+! #        *ext3fs.img|*rootfs.img) FSIMG=$livedev ;;
+! #    esac
+! #else
+      mount -n -t $fstype -o $liverw $livedev /run/initramfs/live
+      RES=$?
+      if [ "$RES" != "0" ]; then
+          die "Failed to mount block device of live image"
+          exit 1
+      fi
+! #fi
+  
+  # overlay setup helper function
+  do_live_overlay() {
+***************
+*** 158,164 ****
+          dd if=$SQUASHED of=/squashed.img bs=512 2> /dev/null
+          umount -n /run/initramfs/live
+          echo "Done copying live image to RAM."
+!         eject -p $livedev || :
+          SQUASHED="/squashed.img"
+      fi
+  
+--- 169,180 ----
+          dd if=$SQUASHED of=/squashed.img bs=512 2> /dev/null
+          umount -n /run/initramfs/live
+          echo "Done copying live image to RAM."
+! 	if [ -n "$isofile" ]; then
+! 	    umount -n /liveiso
+! 	    rmdir /liveiso
+! 	else
+!           eject -p $livedev || :
+!         fi
+          SQUASHED="/squashed.img"
+      fi
+  
