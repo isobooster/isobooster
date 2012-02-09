@@ -1,0 +1,24 @@
+*** ./sbin/dmsquash-live-root.org	2011-08-13 09:15:52.000000000 +0900
+--- ./sbin/dmsquash-live-root	2011-11-01 22:41:15.000000000 +0900
+***************
+*** 42,48 ****
+--- 42,60 ----
+  [ -z "$liverw" ] && liverw=ro
+  # mount the backing of the live image first
+  mkdir -p /dev/.initramfs/live
++ isofile=$(getarg iso-scan/filename=)
++ if [ -n $isofile ]; then
++     mkdir -p /liveiso
++     liveisodev=$livedev
++     liveisorw=$liverw
++     liveisofstype=$fstype
++     mount -n -t $liveisofstype -o $liveisorw $liveisodev /liveiso
++     livedev="/liveiso/$isofile"
++     liverw="loop,ro"
++     fstype="iso9660"
++ fi
+  mount -n -t $fstype -o $liverw $livedev /dev/.initramfs/live
++ 
+  RES=$?
+  if [ "$RES" != "0" ]; then
+      die "Failed to mount block device of live image"

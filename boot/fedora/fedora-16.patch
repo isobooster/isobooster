@@ -1,0 +1,44 @@
+*** ./sbin/dmsquash-live-root.org	2010-05-25 16:18:55.212114814 -0700
+--- ./sbin/dmsquash-live-root	2010-05-25 16:16:47.142049444 -0700
+***************
+*** 50,55 ****
+--- 50,66 ----
+  
+  for arg in $CMDLINE; do case $arg in ro|rw) liverw=$arg ;; esac; done
+  # mount the backing of the live image first
++ isofile=$(getarg iso-scan/filename)
++ if [ -n $isofile ]; then
++     mkdir -p /liveiso
++     liveisodev=$livedev
++     liveisorw=$liverw
++     liveisofstype=$fstype
++     mount -n -t $liveisofstype -o $liveisorw $liveisodev /liveiso
++     livedev="/liveiso/$isofile"
++     liverw="loop,ro"
++     fstype="iso9660"
++ fi
+  mkdir -m 0755 -p /run/initramfs/live
+  if [ -f $livedev ]; then
+      # no mount needed - we've already got the LiveOS image in initramfs
+***************
+*** 145,151 ****
+          dd if=$SQUASHED of=/squashed.img bs=512 2> /dev/null
+          umount -n $NEWROOT
+          echo "Done copying live image to RAM."
+!         eject -p $livedev || :
+          SQUASHED="/squashed.img"
+      fi
+  
+--- 156,167 ----
+          dd if=$SQUASHED of=/squashed.img bs=512 2> /dev/null
+          umount -n $NEWROOT
+          echo "Done copying live image to RAM."
+! 	if [ -n "$isofile" ]; then
+! 	    umount -n /liveiso
+! 	    rmdir /liveiso
+! 	else
+!             eject -p $livedev || :
+! 	fi
+          SQUASHED="/squashed.img"
+      fi
+  
