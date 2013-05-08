@@ -1,0 +1,13 @@
+*** ./scripts/casper.org	2013-05-08 22:27:09.000000000 +0900
+--- ./scripts/casper	2013-05-08 22:32:24.000000000 +0900
+***************
+*** 71,76 ****
+--- 71,78 ----
+                  export CMD_USERFULLNAME="${x#userfullname=}" ;;
+              username=*)
+                  export CMD_USERNAME="${x#username=}" ;;
++ 	    root_persistence=*)
++ 		export root_persistence="${x#root_persistence=}" ;;
+          esac
+      done
+      if [ "${UNIONFS}" = "" ]; then
