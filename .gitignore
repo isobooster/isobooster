@@ -1,10 +1,11 @@
+*~
 *.gz
 *.lz
 *.img
 *.iso
 *.sum
 *.pf2
-/boot/boot.lst
+*.zip
 /grub.exe
 /default
 /ldlinux.sys
@@ -13,8 +14,7 @@
 /iso
 /rescue-*
 /win
-/boot/gobo/initrd-*
-/boot/grub
 /slax-*
 /overlay-*
+/work
 

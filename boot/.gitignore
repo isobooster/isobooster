@@ -1,0 +1,6 @@
+/nimblex
+/grub
+/boot.lst
+/opensolaris/*.gz
+/gobo/initrd-*
+
